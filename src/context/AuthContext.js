@@ -35,11 +35,11 @@ export const AuthProvider = ({ children }) => {
       // This is a mock implementation
       let mockUser;
       
-      if (email === 'user@example.com' && password === 'password') {
+      if (email === 'user@example.com' && password === '123') {
         mockUser = { id: 1, email, role: 'user' };
-      } else if (email === 'broker@example.com' && password === 'password') {
+      } else if (email === 'broker@example.com' && password === '123') {
         mockUser = { id: 2, email, role: 'broker' };
-      } else if (email === 'admin@example.com' && password === 'password') {
+      } else if (email === 'admin@example.com' && password === '123') {
         mockUser = { id: 3, email, role: 'admin' };
       } else {
         throw new Error('Invalid credentials');

@@ -106,7 +106,7 @@ const UserProfile = () => {
         <Card.Content>
           <List.Section>
             <List.Subheader
-              style={{ color: isDarkMode ? "#0A84FF" : "#007AFF" }}
+              style={{ color: paperTheme ? "#0A84FF" : "#007AFF" }}
             >
               Account Information
             </List.Subheader>
