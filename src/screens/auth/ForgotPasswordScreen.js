@@ -1,48 +1,28 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
-import Operations from './Operation';
-import { setAuthToken } from "../../config/axios";
+import axios from "../../config/axios";
 
-const LoginScreen = ({ navigation }) => {
+const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
     setLoading(true);
     try {
-      // Check for admin credentials
-      if (email === 'divy@gmail.com' && password === '4235deep') {
-        // Admin login
-        setAuthToken('admin-token'); // You might want to set a proper admin token
-        navigation.replace('AdminTabs');
-        return;
-      }
-
-      // Regular user/broker login
-      const response = await Operations.LoginUser({
-        email,
-        password
-      });
-      
-      const { user, token } = response;
-      setAuthToken(token);
-      
-      // Navigate based on role
-      if (user.role === 'broker') {
-        navigation.replace('BrokerTabs');
-      } else {
-        navigation.replace('UserTabs');
-      }
+      const response = await axios.post('/auth/forgot-password', { email });
+      setSuccess(response.data.message);
+      setError('');
     } catch (error) {
-      setError(error.message || 'Failed to login');
+      setError(error.response?.data?.message || 'Failed to process request');
+      setSuccess('');
     } finally {
       setLoading(false);
     }
@@ -55,12 +35,22 @@ const LoginScreen = ({ navigation }) => {
     >
       <View style={styles.content}>
         <Text style={styles.title} variant="headlineMedium">
-          Welcome Back
+          Reset Password
         </Text>
-        
+
+        <Text style={styles.subtitle} variant="bodyMedium">
+          Enter your email address and we'll send you instructions to reset your password.
+        </Text>
+
         {error ? (
           <Text style={styles.error} variant="bodyMedium">
             {error}
+          </Text>
+        ) : null}
+
+        {success ? (
+          <Text style={styles.success} variant="bodyMedium">
+            {success}
           </Text>
         ) : null}
 
@@ -74,39 +64,22 @@ const LoginScreen = ({ navigation }) => {
           mode="outlined"
         />
 
-        <TextInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-          mode="outlined"
-        />
-
         <Button
           mode="contained"
-          onPress={handleLogin}
+          onPress={handleResetPassword}
           style={styles.button}
           loading={loading}
           disabled={loading}
         >
-          Login
+          Reset Password
         </Button>
 
         <Button
           mode="text"
-          onPress={() => navigation.navigate('ForgotPassword')}
+          onPress={() => navigation.navigate('Login')}
           style={styles.linkButton}
         >
-          Forgot Password?
-        </Button>
-
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('Signup')}
-          style={styles.linkButton}
-        >
-          Don't have an account? Sign Up
+          Back to Login
         </Button>
       </View>
     </KeyboardAvoidingView>
@@ -125,8 +98,13 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 10,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#666',
   },
   input: {
     marginBottom: 15,
@@ -142,6 +120,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 15,
   },
+  success: {
+    color: 'green',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
 });
 
-export default LoginScreen;
+export default ForgotPasswordScreen; 

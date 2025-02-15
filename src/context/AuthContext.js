@@ -1,61 +1,32 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useState, useContext } from 'react';
 import { Alert } from 'react-native';
-
-const USER_STORAGE_KEY = '@user_data';
+import authService from '../services/authService';
 
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadStoredUser();
-  }, []);
-
-  const loadStoredUser = async () => {
-    setLoading(true);
+  const signIn = async (email, password) => {
     try {
-      const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
+      setLoading(true);
+      const response = await authService.login(email, password);
+      const { user: userData, token } = response;
+      
+      authService.setAuthToken(token);
+      setUser(userData);
     } catch (error) {
-      console.error('Error loading stored user:', error);
-      Alert.alert('Error', 'Failed to load user data');
+      throw new Error(error.message || 'Error signing in');
     } finally {
       setLoading(false);
     }
   };
 
-  const signIn = async (email, password) => {
-    try {
-      // TODO: Replace with your actual API call
-      // This is a mock implementation
-      let mockUser;
-      
-      if (email === 'user@example.com' && password === '123') {
-        mockUser = { id: 1, email, role: 'user' };
-      } else if (email === 'broker@example.com' && password === '123') {
-        mockUser = { id: 2, email, role: 'broker' };
-      } else if (email === 'admin@example.com' && password === '123') {
-        mockUser = { id: 3, email, role: 'admin' };
-      } else {
-        throw new Error('Invalid credentials');
-      }
-
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mockUser));
-      setUser(mockUser);
-    } catch (error) {
-      throw new Error(error.message || 'Error signing in');
-    }
-  };
-
   const signOut = async () => {
     try {
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
-      await AsyncStorage.clear();
+      await authService.logout();
+      authService.setAuthToken(null);
       setUser(null);
       Alert.alert('Success', 'You have been signed out successfully');
     } catch (error) {
@@ -64,8 +35,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signUp = async (userData) => {
+    try {
+      setLoading(true);
+      const response = await authService.register(userData);
+      const { user: newUser, token } = response;
+      
+      authService.setAuthToken(token);
+      setUser(newUser);
+    } catch (error) {
+      throw new Error(error.message || 'Error signing up');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp }}>
       {children}
     </AuthContext.Provider>
   );

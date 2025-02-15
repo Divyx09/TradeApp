@@ -2,9 +2,18 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Button, Card, Avatar, List } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
+import { clearAuthToken } from '../../config/axios';
 
-const AdminProfile = () => {
+const AdminProfile = ({ navigation }) => {
   const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await clearAuthToken();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -104,11 +113,11 @@ const AdminProfile = () => {
       <View style={styles.buttonContainer}>
         <Button
           mode="contained"
-          onPress={handleSignOut}
-          style={styles.signOutButton}
+          onPress={handleLogout}
+          style={styles.logoutButton}
           icon="logout"
         >
-          Sign Out
+          Logout
         </Button>
       </View>
     </ScrollView>
@@ -151,11 +160,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 8,
   },
-  signOutButton: {
-    backgroundColor: '#d32f2f',
-    margin: 10,
-    marginTop: 20,
-    marginBottom: 30,
+  logoutButton: {
+    backgroundColor: '#f44336',
+    margin: 20,
+    marginTop: 'auto',
   },
 });
 
