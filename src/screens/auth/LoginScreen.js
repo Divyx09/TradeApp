@@ -1,48 +1,45 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
-import Operations from './Operation';
+import React, { useState } from "react";
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { TextInput, Button, Text, HelperText } from "react-native-paper";
+import Operations from "./Operation";
 import { setAuthToken } from "../../config/axios";
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     setLoading(true);
     try {
-      // Check for admin credentials
-      if (email === 'divy@gmail.com' && password === '4235deep') {
-        // Admin login
-        setAuthToken('admin-token'); // You might want to set a proper admin token
-        navigation.replace('AdminTabs');
+      if (email === "divy@gmail.com" && password === "4235deep") {
+        setAuthToken("admin-token");
+        navigation.replace("AdminTabs");
         return;
       }
 
-      // Regular user/broker login
       const response = await Operations.LoginUser({
         email,
-        password
+        password,
       });
-      
+
       const { user, token } = response;
       setAuthToken(token);
-      
+
       // Navigate based on role
-      if (user.role === 'broker') {
-        navigation.replace('BrokerTabs');
+      if (user.role === "broker") {
+        navigation.replace("BrokerTabs");
       } else {
-        navigation.replace('UserTabs');
+        navigation.replace("UserTabs");
       }
     } catch (error) {
-      setError(error.message || 'Failed to login');
+      setError(error.message || "Failed to login");
     } finally {
       setLoading(false);
     }
@@ -50,41 +47,41 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title} variant="headlineMedium">
+        <Text style={styles.title} variant='headlineMedium'>
           Welcome Back
         </Text>
-        
+
         {error ? (
-          <Text style={styles.error} variant="bodyMedium">
+          <Text style={styles.error} variant='bodyMedium'>
             {error}
           </Text>
         ) : null}
 
         <TextInput
-          label="Email"
+          label='Email'
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
+          autoCapitalize='none'
+          keyboardType='email-address'
           style={styles.input}
-          mode="outlined"
+          mode='outlined'
         />
 
         <TextInput
-          label="Password"
+          label='Password'
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           style={styles.input}
-          mode="outlined"
+          mode='outlined'
         />
 
         <Button
-          mode="contained"
+          mode='contained'
           onPress={handleLogin}
           style={styles.button}
           loading={loading}
@@ -94,16 +91,16 @@ const LoginScreen = ({ navigation }) => {
         </Button>
 
         <Button
-          mode="text"
-          onPress={() => navigation.navigate('ForgotPassword')}
+          mode='text'
+          onPress={() => navigation.navigate("ForgotPassword")}
           style={styles.linkButton}
         >
           Forgot Password?
         </Button>
 
         <Button
-          mode="text"
-          onPress={() => navigation.navigate('Signup')}
+          mode='text'
+          onPress={() => navigation.navigate("Signup")}
           style={styles.linkButton}
         >
           Don't have an account? Sign Up
@@ -116,17 +113,17 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 30,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   input: {
     marginBottom: 15,
@@ -138,8 +135,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   error: {
-    color: 'red',
-    textAlign: 'center',
+    color: "red",
+    textAlign: "center",
     marginBottom: 15,
   },
 });

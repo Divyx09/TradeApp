@@ -20,15 +20,12 @@ const io = new Server(httpServer, {
   }
 });
 
-// Middleware
 app.use(express.json());
 app.use(cors());
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/stocks", stockRoutes);
 
-// Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log("Client connected");
 
@@ -38,14 +35,11 @@ io.on("connection", (socket) => {
 
   socket.on("subscribeToStocks", (symbols) => {
     console.log("Client subscribed to stocks:", symbols);
-    // You can handle custom symbol subscriptions here
   });
 });
 
-// Start real-time stock updates
 stockService.startRealtimeUpdates(io);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!" });
