@@ -1,12 +1,18 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import React from "react";
+
 
 // Import screens (we'll create these next)
 import Portfolio from "../screens/user/Portfolio";
 import ProfileScreen from "../screens/user/ProfileScreen";
 import StockList from "../screens/user/StockList";
 import UserDashboard from "../screens/user/UserDashboard";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import BuyScreen from "../screens/user/BuyScreen";
+import SellScreen from "../screens/user/SellScreen";
+import StockDetails from "../screens/user/StockDetails";
+
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const UserTabs = () => {
@@ -58,4 +64,33 @@ const UserTabs = () => {
   );
 };
 
-export default UserTabs;
+// Stack Navigator to Include Buy and Sell Pages
+const UserStackNavigator = () => (
+  <Stack.Navigator>
+    <Stack.Screen
+      name="UserTabs"
+      component={UserTabs}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Buy"
+      component={BuyScreen}
+      options={{ headerTitle: 'Buy Stocks', headerBackTitle: 'Back' }}
+    />
+    <Stack.Screen
+      name="Sell"
+      component={SellScreen}
+      options={{ headerTitle: 'Sell Stocks', headerBackTitle: 'Back' }}
+    />
+    <Stack.Screen
+      name="StockDetails"
+      component={StockDetails}
+      options={{ headerTitle: 'Stock Details', headerBackTitle: 'Back' }}
+    >
+
+    </Stack.Screen>
+  </Stack.Navigator>
+);
+
+export default UserStackNavigator;
+
