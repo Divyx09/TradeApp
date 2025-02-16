@@ -1,7 +1,8 @@
 import { Platform } from 'react-native';
 
 // Using actual IP address
-const BASE_URL = "http://192.168.29.33:5000/api/auth";
+// const BASE_URL = "http://192.168.29.33:5000/api/auth";
+const BASE_URL = "http://192.168.1.5:5000/api/auth";
 
 const Operations = {
   SignUpUser: async (userData) => {

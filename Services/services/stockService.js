@@ -93,7 +93,7 @@ class StockService {
         console.log("Fetching intraday data for:", symbol, "range:", range);
 
         const result = await yahooFinance.chart(symbol, {
-          interval: "5m",
+          interval: "1m",
           range: range,
           includePrePost: false,
         });
