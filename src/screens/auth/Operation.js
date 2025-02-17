@@ -1,13 +1,14 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
+import { BASE_URL } from "@env";
 
 // Using actual IP address
 // const BASE_URL = "http://192.168.29.33:5000/api/auth";
-const BASE_URL = "http://192.168.1.5:5000/api/auth";
+// const BASE_URL = "http://192.168.29.33:5000/api/auth";
 
 const Operations = {
   SignUpUser: async (userData) => {
     try {
-      console.log('Attempting to register with URL:', BASE_URL);
+      console.log("Attempting to register with URL:", BASE_URL);
       const response = await fetch(`${BASE_URL}/register`, {
         method: "POST",
         headers: {
@@ -17,7 +18,7 @@ const Operations = {
       });
 
       const data = await response.json();
-      console.log('Registration response:', data);
+      console.log("Registration response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to register");
@@ -25,14 +26,14 @@ const Operations = {
 
       return data;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       throw error;
     }
   },
 
   LoginUser: async (credentials) => {
     try {
-      console.log('Attempting to login with URL:', BASE_URL);
+      console.log("Attempting to login with URL:", BASE_URL);
       const response = await fetch(`${BASE_URL}/login`, {
         method: "POST",
         headers: {
@@ -42,7 +43,7 @@ const Operations = {
       });
 
       const data = await response.json();
-      console.log('Login response:', data);
+      console.log("Login response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to login");
@@ -50,7 +51,7 @@ const Operations = {
 
       return data;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   },
