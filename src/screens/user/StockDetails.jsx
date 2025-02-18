@@ -6,10 +6,34 @@ import {
   ScrollView,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useState,useEffect } from "react";
+import CandleChart from "./CandleChart";
 
 const StockDetails = ({ navigation, route }) => {
   // Dummy Stock Data
   const { stock } = route.params;
+
+
+  //fetch data from api fot historical data of stocks
+
+  // const fetchDetails = async() =>{
+  //   const api = `http://192.168.1.4:5000/api/stocks/historical/${stock.symbol}?period=1m&interval=1d`;
+
+  //   const response = await fetch(api);
+  //   const data = await response.json();
+
+  //   if(Response.ok())
+  //   {
+  //     console.log(data)
+  //   }else{
+  //     console.log("Data not found");
+  //   }
+
+    
+  //     fetchDetails();
+    
+
+  
 
   return (
     <ScrollView style={styles.container}>
@@ -42,7 +66,8 @@ const StockDetails = ({ navigation, route }) => {
       </View>
       {/* Dummy Stock Chart (Replace with real graph later) */}
       <View style={styles.chartPlaceholder}>
-        <Text style={{ color: "#888" }}>📉 Stock Chart Coming Soon...</Text>
+        {/* <Text style={{ color: "#888" }}>📉 Stock Chart Coming Soon...</Text> */}
+        <CandleChart symbol={ stock.symbol} />
       </View>
 
       {/* Buy & Sell Buttons */}
@@ -91,7 +116,7 @@ const styles = StyleSheet.create({
     fontWeight:500
   },
   chartPlaceholder: {
-    height: 150,
+    height: 300,
     backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",

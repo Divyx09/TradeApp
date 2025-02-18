@@ -83,7 +83,7 @@ const UserTabs = () => {
 const UserStackNavigator = () => (
   <Stack.Navigator>
     <Stack.Screen
-      name='UserTabs'
+      name='Tabs'
       component={UserTabs}
       options={{ headerShown: false }}
     />
