@@ -3,9 +3,29 @@ import { View, Text, ScrollView, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useState,useEffect } from 'react';
 
-const CandleChart = ({symbol}) => { 
+const CandleChart = ({symbol,timeFrame}) => { 
 
+  console.log(timeFrame)
     const [stockData,setStockData] = useState([]);
+    const [chartWidth,setChartWidth] = useState(10.0)
+
+     useEffect(() => {
+       switch (timeFrame) {
+         case "5y":
+           setChartWidth(10.0);
+           break;
+         case "1y":
+         case "5m":
+           setChartWidth(5.0);
+           break;
+         case "1m":
+         case "1d":
+           setChartWidth(2.0);
+           break;
+         default:
+           setChartWidth(5.0);
+       }
+     }, [timeFrame]);
   
     //fetch historical data from api to make chart
     useEffect(() => {
@@ -13,7 +33,7 @@ const CandleChart = ({symbol}) => {
         try {
           // Yahoo Finance API endpoint
           const response = await fetch(
-            `http://192.168.1.4:5000/api/stocks/historical/${symbol}?period=1m&interval=1d`
+            `http://192.168.56.1:5000/api/stocks/chart/${symbol}?range=${timeFrame}`
           );
           const data = await response.json();
   
@@ -42,7 +62,7 @@ const CandleChart = ({symbol}) => {
 
       return () => clearInterval(interval)
 
-    },[symbol]);
+    },[timeFrame]);
 
   if (!stockData || stockData.length === 0) {
     return <Text>No Data Available</Text>;
@@ -66,7 +86,7 @@ const CandleChart = ({symbol}) => {
         <Text style={{marginLeft:2}}>Closing Price</Text>
         <LineChart
           data={chartData}
-          width={Dimensions.get("window").width * 2.0} // Dynamic width
+          width={Dimensions.get("window").width * chartWidth} // Dynamic width
           height={280}
           yAxisLabel="$"
           chartConfig={{
