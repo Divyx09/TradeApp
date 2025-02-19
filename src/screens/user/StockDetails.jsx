@@ -1,15 +1,46 @@
 import {
   View,
+  Button,
+  Border,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useState,useEffect } from "react";
+import CandleChart from "./CandleChart";
 
 const StockDetails = ({ navigation, route }) => {
   // Dummy Stock Data
   const { stock } = route.params;
+
+  const [timeFrame,setTimeFrame] = useState('')
+
+  const handleTimeRange = (e) => {
+    setTimeFrame(e)
+    console.log(timeFrame);
+  }
+
+  // useEffect(()=>{
+  //   const fetchDetails = async() =>{
+  //     const api = ``;
+
+  //     try{
+
+  //       const response = await fetch(api)
+  //       const data = await response.json();
+
+  //       console.log()
+  //     }catch(e)
+  //     {
+  //       console.log("Error while fetching data.")
+  //     }
+
+
+  //   }
+  // })
+
 
   return (
     <ScrollView style={styles.container}>
@@ -40,9 +71,20 @@ const StockDetails = ({ navigation, route }) => {
         <Text>💰 Market Cap: ₹{stock.marketCap}</Text>
         <Text>⏳ Timestamp: {stock.timestamp}</Text>
       </View>
+
+      {/* Button for fetching data according to time-lapse */}
+      <View style={styles.btnContainer}>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5y")}><Text>5 Years</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1y")}><Text>1 Years</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5m")}><Text>5 Month</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1m")}><Text>1 Month</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("today")}><Text>Today</Text></TouchableOpacity>
+        
+      </View>
       {/* Dummy Stock Chart (Replace with real graph later) */}
       <View style={styles.chartPlaceholder}>
-        <Text style={{ color: "#888" }}>📉 Stock Chart Coming Soon...</Text>
+        {/* <Text style={{ color: "#888" }}>📉 Stock Chart Coming Soon...</Text> */}
+        <CandleChart symbol={stock.symbol} timeFrame={timeFrame} />
       </View>
 
       {/* Buy & Sell Buttons */}
@@ -69,6 +111,23 @@ const StockDetails = ({ navigation, route }) => {
 export default StockDetails;
 
 const styles = StyleSheet.create({
+  btnContainer:{
+    display:'flex',
+    flexDirection:'row',
+    justifyContent:'center',
+    alignContent:'center',
+    gap:5,
+    marginVertical:3
+  },
+  button:{
+    color:'white',
+    padding:10,
+    // width:60,
+    backgroundColor:'cyan',
+    borderRadius:5,
+    borderWidth:1,
+    borderColor:'black'
+  },
   container: { padding: 20, backgroundColor: "#fff", flex: 1 },
   title: { fontSize: 22, fontWeight: "bold" },
   symbol: { fontSize: 16, color: "#666" },
@@ -91,7 +150,7 @@ const styles = StyleSheet.create({
     fontWeight:500
   },
   chartPlaceholder: {
-    height: 150,
+    height: 300,
     backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
