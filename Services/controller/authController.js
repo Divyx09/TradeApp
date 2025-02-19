@@ -11,7 +11,7 @@ export const register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    const userExists = await User.findOne({ email, phone });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -52,8 +52,8 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
+    // Check password using matchPassword instead of comparePassword
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
