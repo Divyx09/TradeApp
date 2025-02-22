@@ -1,14 +1,60 @@
 import { StyleSheet, Text, View, Button, TextInput, Alert } from "react-native";
 import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAuthToken } from "../../config/axios";
 // import usePortfolioStore from "./store/store";
 
 const BuyScreen = ({ navigation, route }) => {
   const { stock } = route.params;
+  console.log(stock)
 //   const buyStock = usePortfolioStore((state) => state.buyStock);
 
   //stocks quantity
   const [quantity, setQuantity] = useState("1");
   const [totalPrice, setTotalPrice] = useState(0);
+
+  //saving buying details into DB
+  const handleBuyStockRequest = async() =>{
+    // console.log("function called")
+    const token = await getAuthToken();
+    // console.log(token,"Token");
+
+    if(!token)
+    {
+      console.log("no token found")
+    }
+    try {      
+      console.log("Sending request to backend...");
+
+      const res = await fetch(`http://192.168.56.1:5000/api/portfolio/buy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          symbol: stock.symbol,
+          quantity: Number(quantity),
+          companyName: stock.symbol,
+        }),
+      });
+
+      console.log("Response status:", res.status);
+
+      // Try to read JSON response safely
+      const responseData = await res.json();
+      // console.log("Response data:", responseData);
+
+      if (!res.ok) {
+        console.error("Error inserting data:", responseData.message);
+      } else {
+        console.log("Data inserted successfully:", responseData);
+      }
+    } catch (error) {
+      console.error("Network error:", error.message);
+    }
+
+}
 
   const handleCalculatePrice = () => {
     const qty = parseInt(quantity) || 0;
@@ -19,7 +65,7 @@ const BuyScreen = ({ navigation, route }) => {
     setTotalPrice(qty * stock.price);
   };
 
-  const handleBuy = () => {
+  const handleBuy = async() => {
     const availableBal = 10000;
     const remainingBal = availableBal - totalPrice;
 
@@ -29,18 +75,45 @@ const BuyScreen = ({ navigation, route }) => {
       );
       // availableBal -= remainingBal;
 
-    //   //using zunstand to manage user owned stocks quantity
-    //   buyStock({
-    //     name: stock.name,
-    //     ownedStocks: Number(quantity),
-    //   });
-
+      handleBuyStockRequest();
       setQuantity("");
+
+      //saving the bought stock deatails in localStoreage
+      const newTransection ={
+        symbol:stock.symbol,
+        quantity:quantity,
+        timestamp:new Date(),
+        total:stock.price * Number(quantity),
+        type:"Bought"
+      }
+
+      // Retrieve previous transactions
+    const storedTransactions = await AsyncStorage.getItem("transections");
+    let transactions = storedTransactions ? JSON.parse(storedTransactions) : [];
+
+    // Ensure transactions is an array
+    if (!Array.isArray(transactions)) {
+      transactions = [];
+    }
+
+      //if transections have already 5 object the remoce last 
+      if(transactions.length >= 5)
+      {
+        transactions.pop();
+      }
+
+      //save nee recent transection to transections array
+      transactions.unshift(newTransection);
+
+      //update AsyncStorage
+      await AsyncStorage.setItem("transections", JSON.stringify(transactions));
+
       navigation.goBack();
     } else {
       Alert.alert("Not sufficient balance.");
     }
   };
+
 
   return (
     // <GestureHandlerRootView>

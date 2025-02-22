@@ -12,15 +12,22 @@ const CandleChart = ({symbol,timeFrame}) => {
      useEffect(() => {
        switch (timeFrame) {
          case "5y":
-           setChartWidth(10.0);
-           break;
-         case "1y":
-         case "5m":
            setChartWidth(5.0);
            break;
-         case "1m":
+         case "1y":
+           setChartWidth(15.0);
+           break ;
+
+         case "6mo":
+           setChartWidth(8.0);
+           break;
+         case "1mo":
+          setChartWidth(2.0);
+          break;
+
          case "1d":
-           setChartWidth(2.0);
+          case "5d":
+           setChartWidth(5.0);
            break;
          default:
            setChartWidth(5.0);
@@ -81,31 +88,40 @@ const CandleChart = ({symbol,timeFrame}) => {
 
   return (
     <View>
-    <ScrollView horizontal>
-      <View>
-        <Text style={{marginLeft:2}}>Closing Price</Text>
-        <LineChart
-          data={chartData}
-          width={Dimensions.get("window").width * chartWidth} // Dynamic width
-          height={280}
-          yAxisLabel="$"
-          chartConfig={{
-            backgroundColor: "#fff",
-            backgroundGradientFrom: "#fff",
-            backgroundGradientTo: "#fff",
-            decimalPlaces: 2,
-            color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-          }}
-          bezier
-        />
-        
-      </View>
-    </ScrollView>
-    <Text style={{marginLeft:'45%',marginTop:-20,width:'100%',textAlign:'center'}}>Date</Text>
+      <Text style={{ marginLeft: 2 }}>Closing Price</Text>
+      <ScrollView horizontal>
+        <View
+        >
+          <LineChart
+            data={chartData}
+            width={Dimensions.get("window").width * chartWidth} // Dynamic width
+            height={280}
+            yAxisLabel="$"
+            chartConfig={{
+              backgroundColor: "#fff",
+              backgroundGradientFrom: "#fff",
+              backgroundGradientTo: "#fff",
+              decimalPlaces: 2,
+              color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+            }}
+            bezier
+          />
+        </View>
+      </ScrollView>
+      <Text
+        style={{
+          marginLeft: "45%",
+          marginTop: -20,
+          width: "100%",
+          textAlign: "center",
+        }}
+      >
+        Date
+      </Text>
     </View>
   );
 };
