@@ -34,6 +34,8 @@ const Operations = {
   LoginUser: async (credentials) => {
     try {
       console.log("Attempting to login with URL:", BASE_URL);
+      console.log("Login credentials:", { email: credentials.email, passwordLength: credentials.password?.length });
+      
       const response = await fetch(`${BASE_URL}/login`, {
         method: "POST",
         headers: {
@@ -43,7 +45,8 @@ const Operations = {
       });
 
       const data = await response.json();
-      console.log("Login response:", data);
+      console.log("Login response status:", response.status);
+      console.log("Login response data:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to login");
@@ -51,7 +54,10 @@ const Operations = {
 
       return data;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error details:", {
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   },

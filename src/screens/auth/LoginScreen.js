@@ -3,6 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { TextInput, Button, Text, HelperText } from "react-native-paper";
 import Operations from "./Operation";
 import { setAuthToken } from "../../config/axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -18,8 +19,24 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
+      // Special case for admin login
       if (email === "divy@gmail.com" && password === "4235deep") {
-        setAuthToken("admin-token");
+        // Create a dummy admin token
+        const adminToken = "admin-token";
+        
+        // Store user data first
+        const adminUser = {
+          _id: 'admin',
+          name: 'Admin User',
+          email: email,
+          role: 'admin'
+        };
+        await AsyncStorage.setItem('userData', JSON.stringify(adminUser));
+        
+        // Then set the auth token
+        await setAuthToken(adminToken);
+        console.log('Admin login successful');
+        
         navigation.replace("AdminTabs");
         return;
       }
@@ -30,7 +47,11 @@ const LoginScreen = ({ navigation }) => {
       });
 
       const { user, token } = response;
-      setAuthToken(token);
+      
+      // Store user data first
+      await AsyncStorage.setItem('userData', JSON.stringify(user));
+      // Then set the auth token
+      await setAuthToken(token);
 
       // Navigate based on role
       if (user.role === "broker") {
@@ -39,6 +60,7 @@ const LoginScreen = ({ navigation }) => {
         navigation.replace("UserTabs");
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError(error.message || "Failed to login");
     } finally {
       setLoading(false);

@@ -10,7 +10,8 @@ import { Platform } from "react-native";
 
 // Create axios instance with custom config
 const instance = axios.create({
-  baseURL: API_URL,
+  // Remove /api from base URL since it's included in the routes
+  baseURL: API_URL.replace('/api', ''),
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,6 +26,7 @@ instance.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      console.log('Making request to:', config.baseURL + config.url);
       return config;
     } catch (error) {
       return Promise.reject(error);
@@ -39,6 +41,13 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
     if (error.response?.status === 401) {
       // Clear token on authentication error
       await AsyncStorage.removeItem("token");
@@ -52,13 +61,29 @@ export const setAuthToken = async (token) => {
   try {
     if (token) {
       await AsyncStorage.setItem("token", token);
+      // Set token in both instance defaults and AsyncStorage
       instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log('Token set successfully:', token);
     } else {
       await AsyncStorage.removeItem("token");
       delete instance.defaults.headers.common["Authorization"];
+      console.log('Token cleared');
     }
   } catch (error) {
     console.error("Error setting auth token:", error);
+  }
+};
+
+// Function to initialize auth token from storage
+export const initializeAuthToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+      instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log('Token initialized from storage');
+    }
+  } catch (error) {
+    console.error("Error initializing auth token:", error);
   }
 };
 

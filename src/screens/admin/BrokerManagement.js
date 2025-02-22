@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import {
   Text,
@@ -12,69 +12,132 @@ import {
   IconButton,
   useTheme,
   Badge,
+  Portal,
+  Modal,
+  TextInput,
+  Button,
 } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import axios from "../../config/axios";
 
 const BrokerManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedBroker, setSelectedBroker] = useState(null);
+  const [brokers, setBrokers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    license: "",
+    experience: "",
+    specialization: "",
+  });
   const theme = useTheme();
 
-  const brokers = [
-    {
-      id: 1,
-      name: "Robert Smith",
-      email: "robert@brokerage.com",
-      status: "active",
-      clients: 45,
-      performance: "+24.5%",
-      license: "BRK123456",
-    },
-    {
-      id: 2,
-      name: "Emma Johnson",
-      email: "emma@brokerage.com",
-      status: "inactive",
-      clients: 32,
-      performance: "+18.2%",
-      license: "BRK789012",
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      email: "michael@brokerage.com",
-      status: "pending",
-      clients: 28,
-      performance: "+21.7%",
-      license: "BRK345678",
-    },
-  ];
+  const fetchBrokers = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("/api/admin/brokers");
+      setBrokers(response.data);
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to fetch brokers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBrokers();
+  }, []);
+
+  const handleCreateBroker = async () => {
+    try {
+      setLoading(true);
+      await axios.post("/api/admin/brokers", formData);
+      setModalVisible(false);
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        phone: "",
+        license: "",
+        experience: "",
+        specialization: "",
+      });
+      fetchBrokers();
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to create broker");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateBroker = async (brokerId, data) => {
+    try {
+      setLoading(true);
+      await axios.put(`/api/admin/brokers/${brokerId}`, data);
+      fetchBrokers();
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to update broker");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBroker = async (brokerId) => {
+    try {
+      setLoading(true);
+      await axios.delete(`/api/admin/brokers/${brokerId}`);
+      fetchBrokers();
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to delete broker");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
-        return { solid: '#4CAF50', light: 'rgba(76, 175, 80, 0.2)' };
+        return { solid: "#4CAF50", light: "rgba(76, 175, 80, 0.2)" };
       case "inactive":
-        return { solid: '#F44336', light: 'rgba(244, 67, 54, 0.2)' };
+        return { solid: "#F44336", light: "rgba(244, 67, 54, 0.2)" };
       case "pending":
-        return { solid: '#FF9800', light: 'rgba(255, 152, 0, 0.2)' };
+        return { solid: "#FF9800", light: "rgba(255, 152, 0, 0.2)" };
       default:
-        return { solid: '#999', light: 'rgba(153, 153, 153, 0.2)' };
+        return { solid: "#999", light: "rgba(153, 153, 153, 0.2)" };
     }
   };
 
-  const handleBrokerAction = (action, broker) => {
-    setMenuVisible(false);
+  const filteredBrokers = brokers.filter(
+    (broker) =>
+      broker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      broker.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const brokerStats = {
+    total: brokers.length,
+    active: brokers.filter((b) => b.status === "active").length,
+    successRate: brokers.length
+      ? Math.round(
+          (brokers.filter((b) => b.status === "active").length /
+            brokers.length) *
+            100
+        )
+      : 0,
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant='headlineMedium' style={styles.headerTitle}>
+        <Text variant="headlineMedium" style={styles.headerTitle}>
           Broker Management
         </Text>
-        <Text variant='bodyLarge' style={styles.headerSubtitle}>
+        <Text variant="bodyLarge" style={styles.headerSubtitle}>
           Manage platform brokers
         </Text>
       </View>
@@ -82,28 +145,28 @@ const BrokerManagement = () => {
       <Card style={styles.statsCard}>
         <Card.Content style={styles.statsContent}>
           <View style={styles.statItem}>
-            <Text variant='headlineMedium' style={styles.statValue}>
-              105
+            <Text variant="headlineMedium" style={styles.statValue}>
+              {brokerStats.total}
             </Text>
-            <Text variant='bodyMedium' style={styles.statLabel}>
+            <Text variant="bodyMedium" style={styles.statLabel}>
               Total Brokers
             </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text variant='headlineMedium' style={styles.statValue}>
-              85
+            <Text variant="headlineMedium" style={styles.statValue}>
+              {brokerStats.active}
             </Text>
-            <Text variant='bodyMedium' style={styles.statLabel}>
+            <Text variant="bodyMedium" style={styles.statLabel}>
               Active
             </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text variant='headlineMedium' style={styles.statValue}>
-              92%
+            <Text variant="headlineMedium" style={styles.statValue}>
+              {brokerStats.successRate}%
             </Text>
-            <Text variant='bodyMedium' style={styles.statLabel}>
+            <Text variant="bodyMedium" style={styles.statLabel}>
               Success Rate
             </Text>
           </View>
@@ -113,7 +176,7 @@ const BrokerManagement = () => {
       <Card style={styles.searchCard}>
         <Card.Content>
           <Searchbar
-            placeholder='Search brokers...'
+            placeholder="Search brokers..."
             onChangeText={setSearchQuery}
             value={searchQuery}
             style={styles.searchbar}
@@ -124,13 +187,13 @@ const BrokerManagement = () => {
       <Card style={styles.listCard}>
         <Card.Content>
           <View style={styles.listHeader}>
-            <Text variant='titleLarge' style={styles.listTitle}>
+            <Text variant="titleLarge" style={styles.listTitle}>
               Broker List
             </Text>
-            <IconButton icon='filter-variant' onPress={() => {}} />
+            <IconButton icon="filter-variant" onPress={() => {}} />
           </View>
-          {brokers.map((broker, index) => (
-            <React.Fragment key={broker.id}>
+          {filteredBrokers.map((broker, index) => (
+            <React.Fragment key={broker._id}>
               <List.Item
                 title={broker.name}
                 description={`License: ${broker.license}`}
@@ -141,7 +204,7 @@ const BrokerManagement = () => {
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
-                    style={{ backgroundColor: 'rgba(103, 80, 164, 0.2)' }}
+                    style={{ backgroundColor: "rgba(103, 80, 164, 0.2)" }}
                   />
                 )}
                 right={(props) => (
@@ -167,51 +230,131 @@ const BrokerManagement = () => {
                       </Text>
                     </View>
                     <Menu
-                      visible={menuVisible && selectedBroker === broker.id}
+                      visible={menuVisible && selectedBroker === broker._id}
                       onDismiss={() => setMenuVisible(false)}
                       anchor={
                         <IconButton
-                          icon='dots-vertical'
+                          icon="dots-vertical"
                           onPress={() => {
-                            setSelectedBroker(broker.id);
+                            setSelectedBroker(broker._id);
                             setMenuVisible(true);
                           }}
                         />
                       }
                     >
                       <Menu.Item
-                        onPress={() => handleBrokerAction("view", broker)}
-                        title='View Details'
+                        onPress={() => {
+                          setMenuVisible(false);
+                          handleUpdateBroker(broker._id, { status: "active" });
+                        }}
+                        title="Activate"
                       />
                       <Menu.Item
-                        onPress={() => handleBrokerAction("edit", broker)}
-                        title='Edit'
-                      />
-                      <Menu.Item
-                        onPress={() => handleBrokerAction("disable", broker)}
-                        title='Disable'
+                        onPress={() => {
+                          setMenuVisible(false);
+                          handleUpdateBroker(broker._id, { status: "inactive" });
+                        }}
+                        title="Deactivate"
                       />
                       <Divider />
                       <Menu.Item
-                        onPress={() => handleBrokerAction("delete", broker)}
-                        title='Delete'
+                        onPress={() => {
+                          setMenuVisible(false);
+                          handleDeleteBroker(broker._id);
+                        }}
+                        title="Delete"
                         titleStyle={{ color: "#F44336" }}
                       />
                     </Menu>
                   </View>
                 )}
               />
-              {index < brokers.length - 1 && <Divider />}
+              {index < filteredBrokers.length - 1 && <Divider />}
             </React.Fragment>
           ))}
         </Card.Content>
       </Card>
 
+      <Portal>
+        <Modal
+          visible={modalVisible}
+          onDismiss={() => setModalVisible(false)}
+          contentContainerStyle={styles.modalContent}
+        >
+          <Text variant="titleLarge" style={styles.modalTitle}>
+            Add New Broker
+          </Text>
+          <TextInput
+            label="Name"
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+            style={styles.input}
+            mode="outlined"
+          />
+          <TextInput
+            label="Email"
+            value={formData.email}
+            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            style={styles.input}
+            mode="outlined"
+            keyboardType="email-address"
+          />
+          <TextInput
+            label="Password"
+            value={formData.password}
+            onChangeText={(text) => setFormData({ ...formData, password: text })}
+            style={styles.input}
+            mode="outlined"
+            secureTextEntry
+          />
+          <TextInput
+            label="Phone"
+            value={formData.phone}
+            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            style={styles.input}
+            mode="outlined"
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            label="License Number"
+            value={formData.license}
+            onChangeText={(text) => setFormData({ ...formData, license: text })}
+            style={styles.input}
+            mode="outlined"
+          />
+          <TextInput
+            label="Experience (years)"
+            value={formData.experience}
+            onChangeText={(text) => setFormData({ ...formData, experience: text })}
+            style={styles.input}
+            mode="outlined"
+            keyboardType="numeric"
+          />
+          <TextInput
+            label="Specialization"
+            value={formData.specialization}
+            onChangeText={(text) =>
+              setFormData({ ...formData, specialization: text })
+            }
+            style={styles.input}
+            mode="outlined"
+          />
+          <Button
+            mode="contained"
+            onPress={handleCreateBroker}
+            style={styles.submitButton}
+            loading={loading}
+          >
+            Create Broker
+          </Button>
+        </Modal>
+      </Portal>
+
       <FAB
-        icon='plus'
+        icon="plus"
         style={styles.fab}
-        onPress={() => console.log("Add new broker")}
-        label='Add Broker'
+        onPress={() => setModalVisible(true)}
+        label="Add Broker"
       />
     </View>
   );
@@ -305,6 +448,22 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    margin: 20,
+    borderRadius: 8,
+  },
+  modalTitle: {
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  input: {
+    marginBottom: 15,
+  },
+  submitButton: {
+    marginTop: 10,
   },
 });
 

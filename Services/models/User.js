@@ -18,13 +18,44 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     trim: true,
-    minlength: [10, "Enter the  valid Phone Number"],
+    minlength: [10, "Enter the valid Phone Number"],
   },
   role: {
     type: String,
     enum: ["user", "admin", "broker"],
     default: "user",
   },
+  // Broker specific fields
+  license: {
+    type: String,
+    required: function() {
+      return this.role === 'broker';
+    }
+  },
+  experience: {
+    type: Number,
+    default: 0
+  },
+  specialization: {
+    type: String,
+    default: ''
+  },
+  status: {
+    type: String,
+    enum: ["active", "inactive", "pending"],
+    default: "active"
+  },
+  // User specific fields
+  tradingPreference: {
+    type: String,
+    enum: ["conservative", "moderate", "aggressive"],
+    default: "moderate"
+  },
+  riskTolerance: {
+    type: String,
+    enum: ["low", "medium", "high"],
+    default: "medium"
+  }
 }, {
   timestamps: true
 });

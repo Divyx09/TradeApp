@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import stockService from "./services/stockService.js";
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/admin", adminRoutes);
 
 io.on("connection", (socket) => {
   console.log("Client connected");
