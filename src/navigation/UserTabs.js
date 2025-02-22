@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BuyScreen from "../screens/user/BuyScreen";
 import SellScreen from "../screens/user/SellScreen";
 import StockDetails from "../screens/user/StockDetails";
+import RecentTrasection from "../screens/user/RecentTrasection";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,7 +39,7 @@ const UserTabs = () => {
       />
       <Tab.Screen
         name='Portfolio'
-        component={Portfolio}
+        component={Portfolio }
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
@@ -101,6 +102,16 @@ const UserStackNavigator = () => (
       name='StockDetails'
       component={StockDetails}
       options={{ headerTitle: "Stock Details", headerBackTitle: "Back" }}
+    ></Stack.Screen>
+    <Stack.Screen
+      name='portfolio'
+      component={Portfolio}
+      options={{ headerTitle: "portfolio", headerBackTitle: "Back" }}
+    ></Stack.Screen>
+    <Stack.Screen
+      name='recentTransection'
+      component={RecentTrasection}
+      options={{ headerTitle: "recentTransection", headerBackTitle: "Back" }}
     ></Stack.Screen>
   </Stack.Navigator>
 );

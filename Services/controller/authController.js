@@ -58,6 +58,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    console.log(generateToken(user._id))
     res.json({
       user: {
         _id: user._id,

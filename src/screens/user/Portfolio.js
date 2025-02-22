@@ -1,17 +1,62 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, DataTable } from 'react-native-paper';
+import { getAuthToken } from '../../config/axios';
+import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Portfolio = () => {
-  // Mock data - replace with real API data
-  const holdings = [
-    { id: '1', symbol: 'RELIANCE', quantity: 10, avgPrice: 2400, currentPrice: 2450.75, pnl: '+507.50' },
-    { id: '2', symbol: 'TCS', quantity: 5, avgPrice: 3500, currentPrice: 3550.25, pnl: '+250.25' },
-    { id: '3', symbol: 'HDFC', quantity: 15, avgPrice: 1650, currentPrice: 1680.90, pnl: '+463.50' },
-  ];
 
-  const totalValue = holdings.reduce((sum, stock) => sum + (stock.currentPrice * stock.quantity), 0);
-  const totalInvestment = holdings.reduce((sum, stock) => sum + (stock.avgPrice * stock.quantity), 0);
+  //storing portfolio data
+  const [data, setData] = useState({ holdings: [] });
+
+  //fetching data from DB
+  const fetchPortfolio = async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`http://192.168.56.1:5000/api/portfolio/holdings`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      console.log(result);
+      setData(result);
+    } catch (error) {
+      console.log("Network Error:", error.message);
+    }
+  };
+
+  //storing pnl of every stock
+  const [stockPnl,setstockPnl] =useState({});
+
+  const calStockPnl =() =>{
+    const pnl ={}
+    for (const holding of data.holdings) {
+      pnl[holding.symbol] = (holding.currentPrice * holding.quantity - holding.averageBuyPrice * holding.quantity ).toFixed(2)
+    }
+    setstockPnl(pnl)
+  }
+  // Fetch data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchPortfolio();
+    }, [])
+  );
+
+useEffect(()=>{
+  if(data.holdings.length > 0)
+  {
+    calStockPnl();
+  }
+})
+
+
+  const totalValue = data.holdings.reduce((sum, stock) => sum + (stock.currentPrice * stock.quantity), 0);
+  const totalInvestment = data.holdings.reduce((sum, stock) => sum + (stock.averageBuyPrice * stock.quantity), 0);
   const totalPnL = totalValue - totalInvestment;
 
   return (
@@ -26,8 +71,8 @@ const Portfolio = () => {
             </View>
             <View style={styles.summaryItem}>
               <Text variant="bodyMedium">Total P&L</Text>
-              <Text 
-                variant="titleMedium" 
+              <Text
+                variant="titleMedium"
                 style={{ color: totalPnL >= 0 ? 'green' : 'red' }}
               >
                 ₹{totalPnL.toFixed(2)}
@@ -49,17 +94,18 @@ const Portfolio = () => {
               <DataTable.Title numeric>P&L</DataTable.Title>
             </DataTable.Header>
 
-            {holdings.map((holding) => (
+            {data.holdings.map((holding) => (
               <DataTable.Row key={holding.id}>
                 <DataTable.Cell>{holding.symbol}</DataTable.Cell>
                 <DataTable.Cell numeric>{holding.quantity}</DataTable.Cell>
-                <DataTable.Cell numeric>{holding.avgPrice}</DataTable.Cell>
+                <DataTable.Cell numeric>{holding.averageBuyPrice.toFixed(2)}</DataTable.Cell>
                 <DataTable.Cell numeric>{holding.currentPrice}</DataTable.Cell>
-                <DataTable.Cell 
+                <DataTable.Cell
                   numeric
-                  textStyle={{ color: holding.pnl.startsWith('+') ? 'green' : 'red' }}
                 >
-                  {holding.pnl}
+                  <Text style={{color:stockPnl[holding.symbol] > 0 ?'green' :'red'}}>
+                  {stockPnl[holding.symbol]}
+                  </Text>
                 </DataTable.Cell>
               </DataTable.Row>
             ))}

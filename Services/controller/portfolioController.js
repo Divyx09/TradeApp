@@ -6,6 +6,8 @@ export const buyStock = async (req, res) => {
     const { symbol, quantity, companyName } = req.body;
     const userId = req.user._id;
 
+    console.log(symbol)
+    console.log(userId)
     // Get current stock price
     const quote = await stockService.getQuote(symbol);
     const price = quote.price;

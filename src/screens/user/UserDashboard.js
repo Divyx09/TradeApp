@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Card } from 'react-native-paper';
 
-const UserDashboard = () => {
+const UserDashboard = ({navigation}) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Dashboard</Text>
@@ -13,14 +13,14 @@ const UserDashboard = () => {
         </Card.Content>
       </Card>
       
-      <Card style={styles.card}>
+      <Card style={styles.card} onPress={()=> navigation.navigate("portfolio")}>
         <Card.Content>
           <Text variant="titleLarge">Your Portfolio Summary</Text>
           {/* Add portfolio summary components here */}
         </Card.Content>
       </Card>
       
-      <Card style={styles.card}>
+      <Card style={styles.card} onPress={()=> navigation.navigate("recentTransection")}>
         <Card.Content>
           <Text variant="titleLarge">Recent Transactions</Text>
           {/* Add recent transactions list here */}

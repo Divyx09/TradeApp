@@ -22,26 +22,6 @@ const StockDetails = ({ navigation, route }) => {
     console.log(timeFrame);
   }
 
-  // useEffect(()=>{
-  //   const fetchDetails = async() =>{
-  //     const api = ``;
-
-  //     try{
-
-  //       const response = await fetch(api)
-  //       const data = await response.json();
-
-  //       console.log()
-  //     }catch(e)
-  //     {
-  //       console.log("Error while fetching data.")
-  //     }
-
-
-  //   }
-  // })
-
-
   return (
     <ScrollView style={styles.container}>
       {/* Stock Name & Symbol */}
@@ -74,11 +54,12 @@ const StockDetails = ({ navigation, route }) => {
 
       {/* Button for fetching data according to time-lapse */}
       <View style={styles.btnContainer}>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5y")}><Text>5 Years</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1y")}><Text>1 Years</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5m")}><Text>5 Month</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1m")}><Text>1 Month</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("today")}><Text>Today</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5y")}><Text>5yr</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1y")}><Text>1yr</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("6mo")}><Text>6mo</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1mo")}><Text>1mo</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5d")}><Text>5d</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1d")}><Text>1d</Text></TouchableOpacity>
         
       </View>
       {/* Dummy Stock Chart (Replace with real graph later) */}
