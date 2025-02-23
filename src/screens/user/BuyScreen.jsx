@@ -1,32 +1,57 @@
-import { StyleSheet, Text, View, Button, TextInput, Alert } from "react-native";
-import { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAuthToken } from "../../config/axios";
-// import usePortfolioStore from "./store/store";
+import { API_URL } from "@env";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+const AVAILABLE_BALANCE = 10000; // This should come from your user's actual balance
 
 const BuyScreen = ({ navigation, route }) => {
   const { stock } = route.params;
-  console.log(stock)
-//   const buyStock = usePortfolioStore((state) => state.buyStock);
+  const [quantity, setQuantity] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  //stocks quantity
-  const [quantity, setQuantity] = useState("1");
-  const [totalPrice, setTotalPrice] = useState(0);
+  // Calculate total price using useMemo to prevent unnecessary recalculations
+  const totalPrice = useMemo(() => {
+    const qty = parseInt(quantity) || 0;
+    return qty * stock.price;
+  }, [quantity, stock.price]);
 
-  //saving buying details into DB
-  const handleBuyStockRequest = async() =>{
-    // console.log("function called")
-    const token = await getAuthToken();
-    // console.log(token,"Token");
+  // Calculate remaining balance
+  const remainingBalance = useMemo(() => {
+    return AVAILABLE_BALANCE - totalPrice;
+  }, [totalPrice]);
 
-    if(!token)
-    {
-      console.log("no token found")
+  // Validate input
+  const validateInput = useCallback(() => {
+    const qty = parseInt(quantity);
+    if (!qty || qty <= 0) {
+      setError("Please enter a valid quantity");
+      return false;
     }
-    try {      
-      console.log("Sending request to backend...");
+    if (remainingBalance < 0) {
+      setError("Insufficient balance");
+      return false;
+    }
+    setError(null);
+    return true;
+  }, [quantity, remainingBalance]);
 
-      const res = await fetch(`http://192.168.56.1:5000/api/portfolio/buy`, {
+  const handleBuyStockRequest = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const token = await getAuthToken();
+      
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(`${API_URL}/portfolio/buy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,162 +59,245 @@ const BuyScreen = ({ navigation, route }) => {
         },
         body: JSON.stringify({
           symbol: stock.symbol,
-          quantity: Number(quantity),
-          companyName: stock.symbol,
+          quantity: parseInt(quantity),
+          companyName: stock.companyName || stock.symbol,
         }),
       });
 
-      console.log("Response status:", res.status);
+      const data = await response.json();
 
-      // Try to read JSON response safely
-      const responseData = await res.json();
-      // console.log("Response data:", responseData);
-
-      if (!res.ok) {
-        console.error("Error inserting data:", responseData.message);
-      } else {
-        console.log("Data inserted successfully:", responseData);
-      }
-    } catch (error) {
-      console.error("Network error:", error.message);
-    }
-
-}
-
-  const handleCalculatePrice = () => {
-    const qty = parseInt(quantity) || 0;
-
-    if (qty == 0) {
-      Alert.alert("Enter valid quantity.");
-    }
-    setTotalPrice(qty * stock.price);
-  };
-
-  const handleBuy = async() => {
-    const availableBal = 10000;
-    const remainingBal = availableBal - totalPrice;
-
-    if (remainingBal >= 0) {
-      Alert.alert(
-        `You have bought ${quantity} stocks of ${stock.symbol} worth : ${totalPrice}`
-      );
-      // availableBal -= remainingBal;
-
-      handleBuyStockRequest();
-      setQuantity("");
-
-      //saving the bought stock deatails in localStoreage
-      const newTransection ={
-        symbol:stock.symbol,
-        quantity:quantity,
-        timestamp:new Date(),
-        total:stock.price * Number(quantity),
-        type:"Bought"
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to buy stock");
       }
 
-      // Retrieve previous transactions
-    const storedTransactions = await AsyncStorage.getItem("transections");
-    let transactions = storedTransactions ? JSON.parse(storedTransactions) : [];
+      // Save transaction to local storage
+      const newTransaction = {
+        symbol: stock.symbol,
+        quantity: parseInt(quantity),
+        timestamp: new Date().toISOString(),
+        total: totalPrice,
+        type: "BUY",
+        price: stock.price
+      };
 
-    // Ensure transactions is an array
-    if (!Array.isArray(transactions)) {
-      transactions = [];
-    }
-
-      //if transections have already 5 object the remoce last 
-      if(transactions.length >= 5)
-      {
-        transactions.pop();
-      }
-
-      //save nee recent transection to transections array
-      transactions.unshift(newTransection);
-
-      //update AsyncStorage
+      const storedTransactions = await AsyncStorage.getItem("transections");
+      let transactions = storedTransactions ? JSON.parse(storedTransactions) : [];
+      
+      if (!Array.isArray(transactions)) transactions = [];
+      if (transactions.length >= 5) transactions.pop();
+      
+      transactions.unshift(newTransaction);
       await AsyncStorage.setItem("transections", JSON.stringify(transactions));
 
       navigation.goBack();
-    } else {
-      Alert.alert("Not sufficient balance.");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+      setShowConfirmDialog(false);
     }
   };
 
+  const handleBuy = () => {
+    if (validateInput()) {
+      setShowConfirmDialog(true);
+    }
+  };
 
   return (
-    // <GestureHandlerRootView>
-    <View style={styles.container}>
-      <Text style={styles.companyName}>{stock.symbol} - Buy stocks</Text>
-      <Text style={styles.stockCurrentPrice}>
-        current price : {stock.price}
-      </Text>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Card style={styles.stockInfoCard}>
+          <Card.Content>
+            <View style={styles.stockHeader}>
+              <View>
+                <Text variant="titleLarge" style={styles.symbolText}>
+                  {stock.symbol.replace('.NS', '')}
+                </Text>
+                <Text variant="bodyMedium" style={styles.companyName}>
+                  {stock.companyName || stock.symbol}
+                </Text>
+              </View>
+              <View style={styles.priceContainer}>
+                <Text variant="titleMedium" style={styles.currentPrice}>
+                  ₹{stock.price.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </Text>
+                <Text
+                  style={[
+                    styles.priceChange,
+                    { color: stock.change < 0 ? '#FF4444' : '#4CAF50' }
+                  ]}
+                >
+                  {stock.change < 0 ? '▼' : '▲'} {Math.abs(stock.changePercent).toFixed(2)}%
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
 
-      <Text style={styles.text}>Quantity:</Text>
-      <TextInput
-        style={styles.stockQuantityInput}
-        placeholder="Enter stocks quantity"
-        keyboardType="numeric"
-        value={quantity}
-        onChangeText={setQuantity}
-      />
+        <Card style={styles.buyCard}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Available Balance
+            </Text>
+            <Text variant="headlineMedium" style={styles.balanceText}>
+              ₹{AVAILABLE_BALANCE.toLocaleString('en-IN')}
+            </Text>
 
-      <Button title="Calculate Price" onPress={handleCalculatePrice}></Button>
-      {totalPrice ? (
-        <Text style={styles.totalPrice}>Total price:{totalPrice}</Text>
-      ) : null}
+            <TextInput
+              label="Quantity"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+              mode="outlined"
+              style={styles.input}
+              error={!!error}
+              right={<TextInput.Icon icon="calculator" />}
+              disabled={isLoading}
+            />
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
 
-      <View style={styles.confirmBuyBtn}>
-        <Button title="Confirm Buy" onPress={handleBuy}></Button>
-      </View>
-    </View>
-    // </GestureHandlerRootView>
+            {quantity !== "" && (
+              <View style={styles.summaryContainer}>
+                <View style={styles.summaryRow}>
+                  <Text>Price per share</Text>
+                  <Text>₹{stock.price.toFixed(2)}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text>Total Amount</Text>
+                  <Text style={styles.totalText}>₹{totalPrice.toFixed(2)}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text>Remaining Balance</Text>
+                  <Text style={{ 
+                    color: remainingBalance < 0 ? '#FF4444' : '#4CAF50',
+                    fontWeight: 'bold'
+                  }}>
+                    ₹{remainingBalance.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <Button
+              mode="contained"
+              onPress={handleBuy}
+              style={styles.buyButton}
+              disabled={isLoading || !quantity || !!error}
+              loading={isLoading}
+            >
+              {isLoading ? 'Processing...' : 'Buy Now'}
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+
+      <Portal>
+        <Dialog visible={showConfirmDialog} onDismiss={() => !isLoading && setShowConfirmDialog(false)}>
+          <Dialog.Title>Confirm Purchase</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Are you sure you want to buy {quantity} shares of {stock.symbol} for ₹{totalPrice.toFixed(2)}?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button 
+              onPress={() => setShowConfirmDialog(false)} 
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onPress={handleBuyStockRequest} 
+              loading={isLoading}
+              disabled={isLoading}
+            >
+              Confirm
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </KeyboardAvoidingView>
   );
 };
 
-export default BuyScreen;
-
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 10,
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-
+  scrollContent: {
+    padding: 16,
+  },
+  stockInfoCard: {
+    marginBottom: 16,
+    elevation: 2,
+  },
+  stockHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  symbolText: {
+    fontWeight: "bold",
+  },
   companyName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "start",
-    marginTop: 20,
+    color: "#666",
+    marginTop: 4,
   },
-
-  stockCurrentPrice: {
-    marginTop: 8,
+  priceContainer: {
+    alignItems: "flex-end",
+  },
+  currentPrice: {
+    fontWeight: "bold",
+  },
+  priceChange: {
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+  buyCard: {
+    elevation: 2,
+  },
+  sectionTitle: {
+    marginBottom: 8,
+    color: "#666",
+  },
+  balanceText: {
+    fontWeight: "bold",
+    marginBottom: 16,
+    color: "#2196F3",
+  },
+  input: {
+    marginBottom: 4,
+  },
+  summaryContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  totalText: {
+    fontWeight: "bold",
     fontSize: 16,
-    fontWeight: 400,
-    fontFamily: "arial",
-    marginBottom: 15,
-    marginLeft: 1,
   },
-
-  stockQuantityInput: {
-    marginVertical: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    borderRadius: 5,
-  },
-
-  text: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginVertical: 12,
-  },
-
-  confirmBuyBtn: {
-    backgroundColor: "green",
-    color: "white",
-    marginTop: 20,
+  buyButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    backgroundColor: "#4CAF50",
   },
 });
+
+export default BuyScreen;

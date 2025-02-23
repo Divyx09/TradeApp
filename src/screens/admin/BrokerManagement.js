@@ -175,23 +175,23 @@ const BrokerManagement = () => {
 
       <Card style={styles.searchCard}>
         <Card.Content>
-          <Searchbar
+      <Searchbar
             placeholder="Search brokers..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
             style={styles.searchbar}
           />
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
 
       <Card style={styles.listCard}>
-        <Card.Content>
+          <Card.Content>
           <View style={styles.listHeader}>
             <Text variant="titleLarge" style={styles.listTitle}>
               Broker List
             </Text>
             <IconButton icon="filter-variant" onPress={() => {}} />
-          </View>
+              </View>
           {filteredBrokers.map((broker, index) => (
             <React.Fragment key={broker._id}>
               <List.Item
@@ -228,7 +228,7 @@ const BrokerManagement = () => {
                       >
                         {broker.status}
                       </Text>
-                    </View>
+              </View>
                     <Menu
                       visible={menuVisible && selectedBroker === broker._id}
                       onDismiss={() => setMenuVisible(false)}
@@ -266,14 +266,14 @@ const BrokerManagement = () => {
                         titleStyle={{ color: "#F44336" }}
                       />
                     </Menu>
-                  </View>
+              </View>
                 )}
               />
               {index < filteredBrokers.length - 1 && <Divider />}
             </React.Fragment>
           ))}
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
 
       <Portal>
         <Modal
