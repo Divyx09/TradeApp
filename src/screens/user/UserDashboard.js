@@ -55,6 +55,14 @@ const UserDashboard = ({navigation}) => {
       <Card style={styles.card}>
         <Card.Content>
           <Text variant="titleLarge">Market Overview</Text>
+          <LineChart
+            data={chartData}
+            width={screenWidth - 64} // Account for padding
+            height={220}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
           <WebView
             style={styles.webview}
             source={{
@@ -119,6 +127,9 @@ const styles = StyleSheet.create({
   webview: {
     height: 400,
     width: '100%',
+  },
+  chart: {
+    marginBottom: 16,
   },
 });
 
