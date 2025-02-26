@@ -1,8 +1,6 @@
 import { Platform } from "react-native";
-import { BASE_URL } from "@env";
+import { BASE_URL } from "../../config/urls";
 
-// Using actual IP address
-// const BASE_URL = "http://192.168.1.7:5000/api/auth";
 // const BASE_URL = "http://192.168.29.33:5000/api/auth";
 
 const Operations = {
@@ -34,31 +32,64 @@ const Operations = {
   LoginUser: async (credentials) => {
     try {
       console.log("Attempting to login with URL:", BASE_URL);
-      console.log("Login credentials:", { email: credentials.email, passwordLength: credentials.password?.length });
-      
+      console.log("Login request details:", {
+        url: `${BASE_URL}/login`,
+        method: "POST",
+        email: credentials.email,
+        passwordLength: credentials.password?.length,
+      });
+
       const response = await fetch(`${BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
-      console.log("Login response status:", response.status);
-      console.log("Login response data:", data);
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        throw new Error("Server response was not in JSON format");
+      }
+
+      console.log("Login response details:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        data: data,
+      });
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to login");
       }
 
+      if (!data.token || !data.user) {
+        throw new Error("Invalid response format from server");
+      }
+
       return data;
     } catch (error) {
       console.error("Login error details:", {
+        name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        cause: error.cause,
       });
-      throw error;
+
+      // Enhance error message based on the type of error
+      if (error.message.includes("Network request failed")) {
+        throw new Error(
+          "Unable to connect to the server. Please check your internet connection.",
+        );
+      } else if (error.message.includes("JSON")) {
+        throw new Error("Server error. Please try again later.");
+      } else {
+        throw error;
+      }
     }
   },
 };

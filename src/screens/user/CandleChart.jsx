@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, ScrollView, Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { useState, useEffect } from "react";
-import { API_URL } from "@env";
+import { API_URL } from "../../config/urls";
 
 const CandleChart = ({ symbol, timeFrame }) => {
   console.log(timeFrame);

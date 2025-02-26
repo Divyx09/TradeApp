@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { TextInput, Button, Text, HelperText } from "react-native-paper";
+import { TextInput, Button, Text, HelperText, ActivityIndicator } from "react-native-paper";
 import Operations from "./Operation";
 import { setAuthToken } from "../../config/axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,47 +11,66 @@ const LoginScreen = ({ navigation }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
+  const validateInputs = () => {
+    if (!email) {
+      setError("Email is required");
+      return false;
     }
+    if (!password) {
+      setError("Password is required");
+      return false;
+    }
+    return true;
+  };
 
-    setLoading(true);
+  const handleLogin = async () => {
     try {
+      // Clear any previous errors
+      setError("");
+
+      // Validate inputs
+      if (!validateInputs()) {
+        return;
+      }
+
+      setLoading(true);
+
       // Special case for admin login
       if (email === "divy@gmail.com" && password === "4235deep") {
-        // Create a dummy admin token
         const adminToken = "admin-token";
-        
-        // Store user data first
         const adminUser = {
           _id: 'admin',
           name: 'Admin User',
           email: email,
           role: 'admin'
         };
-        await AsyncStorage.setItem('userData', JSON.stringify(adminUser));
         
-        // Then set the auth token
+        await AsyncStorage.setItem('userData', JSON.stringify(adminUser));
         await setAuthToken(adminToken);
         console.log('Admin login successful');
-        
         navigation.replace("AdminTabs");
         return;
       }
 
+      console.log('Attempting to login with:', { email });
       const response = await Operations.LoginUser({
         email,
         password,
       });
 
+      console.log('Login response:', response);
+
+      if (!response || !response.token) {
+        throw new Error('Invalid response from server');
+      }
+
       const { user, token } = response;
       
-      // Store user data first
+      // Store user data and token
       await AsyncStorage.setItem('userData', JSON.stringify(user));
-      // Then set the auth token
       await setAuthToken(token);
+
+      console.log('Login successful, navigating to appropriate screen');
 
       // Navigate based on role
       if (user.role === "broker") {
@@ -61,7 +80,7 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || "Failed to login");
+      setError(error.message || "Failed to login. Please check your credentials and try again.");
     } finally {
       setLoading(false);
     }
@@ -86,20 +105,30 @@ const LoginScreen = ({ navigation }) => {
         <TextInput
           label='Email'
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setError(""); // Clear error when user types
+          }}
           autoCapitalize='none'
           keyboardType='email-address'
           style={styles.input}
           mode='outlined'
+          disabled={loading}
+          error={error && error.includes('Email')}
         />
 
         <TextInput
           label='Password'
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setError(""); // Clear error when user types
+          }}
           secureTextEntry
           style={styles.input}
           mode='outlined'
+          disabled={loading}
+          error={error && error.includes('Password')}
         />
 
         <Button
@@ -109,13 +138,14 @@ const LoginScreen = ({ navigation }) => {
           loading={loading}
           disabled={loading}
         >
-          Login
+          {loading ? 'Logging in...' : 'Login'}
         </Button>
 
         <Button
           mode='text'
           onPress={() => navigation.navigate("ForgotPassword")}
           style={styles.linkButton}
+          disabled={loading}
         >
           Forgot Password?
         </Button>
@@ -124,6 +154,7 @@ const LoginScreen = ({ navigation }) => {
           mode='text'
           onPress={() => navigation.navigate("Signup")}
           style={styles.linkButton}
+          disabled={loading}
         >
           Don't have an account? Sign Up
         </Button>

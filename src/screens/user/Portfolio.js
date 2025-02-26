@@ -4,7 +4,7 @@ import { Text, Card, DataTable, ActivityIndicator } from "react-native-paper";
 import { getAuthToken } from "../../config/axios";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { API_URL } from "@env";
+import { API_URL } from "../../config/urls";
 
 const Portfolio = () => {
   const [data, setData] = useState({ holdings: [] });

@@ -3,13 +3,13 @@ import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "re
 import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAuthToken } from "../../config/axios";
-import { API_URL } from "@env";
+import { API_URL } from "../../config/urls";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-const AVAILABLE_BALANCE = 10000; // This should come from your user's actual balance
+import { useWallet } from "../../context/WalletContext";
 
 const BuyScreen = ({ navigation, route }) => {
   const { stock } = route.params;
+  const { balance, removeMoney, addMoney, refreshBalance, isLoading: walletLoading } = useWallet();
   const [quantity, setQuantity] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,8 +23,8 @@ const BuyScreen = ({ navigation, route }) => {
 
   // Calculate remaining balance
   const remainingBalance = useMemo(() => {
-    return AVAILABLE_BALANCE - totalPrice;
-  }, [totalPrice]);
+    return balance - totalPrice;
+  }, [balance, totalPrice]);
 
   // Validate input
   const validateInput = useCallback(() => {
@@ -51,6 +51,9 @@ const BuyScreen = ({ navigation, route }) => {
         throw new Error("Authentication required");
       }
 
+      // First try to remove money from wallet
+      await removeMoney(totalPrice);
+
       const response = await fetch(`${API_URL}/portfolio/buy`, {
         method: "POST",
         headers: {
@@ -67,6 +70,8 @@ const BuyScreen = ({ navigation, route }) => {
       const data = await response.json();
 
       if (!response.ok) {
+        // If the API call fails, we should add the money back to the wallet
+        await addMoney(totalPrice);
         throw new Error(data.message || "Failed to buy stock");
       }
 
@@ -88,6 +93,9 @@ const BuyScreen = ({ navigation, route }) => {
       
       transactions.unshift(newTransaction);
       await AsyncStorage.setItem("transections", JSON.stringify(transactions));
+
+      // Refresh wallet balance
+      await refreshBalance();
 
       navigation.goBack();
     } catch (error) {
@@ -147,7 +155,14 @@ const BuyScreen = ({ navigation, route }) => {
               Available Balance
             </Text>
             <Text variant="headlineMedium" style={styles.balanceText}>
-              ₹{AVAILABLE_BALANCE.toLocaleString('en-IN')}
+              {walletLoading ? (
+                <ActivityIndicator size="small" color={paperTheme.colors.primary} />
+              ) : (
+                `₹${balance.toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}`
+              )}
             </Text>
 
             <TextInput

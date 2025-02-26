@@ -3,11 +3,13 @@ import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "re
 import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog } from "react-native-paper";
 import { getAuthToken } from "../../config/axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "@env";
+import { API_URL } from "../../config/urls";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useWallet } from "../../context/WalletContext";
 
 const SellScreen = ({ navigation, route }) => {
   const { stock } = route.params;
+  const { addMoney, refreshBalance } = useWallet();
   const [quantity, setQuantity] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -108,6 +110,9 @@ const SellScreen = ({ navigation, route }) => {
         throw new Error(data.message || "Failed to sell stock");
       }
 
+      // Add the money to wallet after successful sale
+      await addMoney(totalPrice);
+
       // Save transaction to local storage
       const newTransaction = {
         symbol: stock.symbol,
@@ -126,6 +131,9 @@ const SellScreen = ({ navigation, route }) => {
       
       transactions.unshift(newTransaction);
       await AsyncStorage.setItem("transections", JSON.stringify(transactions));
+
+      // Refresh wallet balance
+      await refreshBalance();
 
       navigation.goBack();
     } catch (error) {

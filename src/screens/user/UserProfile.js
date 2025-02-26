@@ -13,11 +13,15 @@ import {
   Button,
   List,
   useTheme as usePaperTheme,
+  ActivityIndicator,
+  Banner,
 } from "react-native-paper";
 import { useAuth } from "../../context/AuthContext";
+import { useWallet } from "../../context/WalletContext";
 
 const UserProfile = () => {
   const { signOut } = useAuth();
+  const { balance, isLoading, error, refreshBalance } = useWallet();
   const paperTheme = usePaperTheme();
 
   const user = {
@@ -56,6 +60,39 @@ const UserProfile = () => {
       margin: 16,
       borderRadius: 12,
       elevation: 2,
+    },
+    walletCard: {
+      backgroundColor: error ? "#FF453A" : "#4CAF50",
+      margin: 16,
+      borderRadius: 12,
+      elevation: 4,
+    },
+    walletBalance: {
+      color: "white",
+      fontSize: 28,
+      fontWeight: "bold",
+      textAlign: "center",
+      marginVertical: 20,
+    },
+    walletLabel: {
+      color: "white",
+      fontSize: 16,
+      textAlign: "center",
+      marginBottom: 10,
+      opacity: 0.9,
+    },
+    errorText: {
+      color: "white",
+      fontSize: 14,
+      textAlign: "center",
+      marginTop: 5,
+    },
+    retryButton: {
+      marginTop: 10,
+      backgroundColor: "white",
+    },
+    retryButtonLabel: {
+      color: error ? "#FF453A" : "#4CAF50",
     },
     logoutButton: {
       margin: 16,
@@ -101,6 +138,37 @@ const UserProfile = () => {
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
       </View>
+
+      <Card style={styles.walletCard}>
+        <Card.Content>
+          <Text style={styles.walletLabel}>Wallet Balance</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="white" />
+          ) : (
+            <>
+              <Text style={styles.walletBalance}>
+                ₹{balance.toLocaleString('en-IN', {
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 2,
+                })}
+              </Text>
+              {error && (
+                <>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <Button 
+                    mode="contained" 
+                    onPress={refreshBalance}
+                    style={styles.retryButton}
+                    labelStyle={styles.retryButtonLabel}
+                  >
+                    Retry
+                  </Button>
+                </>
+              )}
+            </>
+          )}
+        </Card.Content>
+      </Card>
 
       <Card style={styles.card} mode='elevated'>
         <Card.Content>

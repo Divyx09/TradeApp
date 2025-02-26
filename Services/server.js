@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import walletRoutes from "./routes/walletRoutes.js";
 import stockService from "./services/stockService.js";
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/wallet", walletRoutes);
 
 io.on("connection", (socket) => {
   console.log("Client connected");

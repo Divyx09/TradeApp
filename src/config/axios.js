@@ -1,6 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "@env";
+import { API_URL } from "./urls";
 
 import { Platform } from "react-native";
 
@@ -10,8 +10,7 @@ import { Platform } from "react-native";
 
 // Create axios instance with custom config
 const instance = axios.create({
-  // Remove /api from base URL since it's included in the routes
-  baseURL: API_URL.replace('/api', ''),
+  baseURL: API_URL, // Keep the /api in the base URL
   headers: {
     "Content-Type": "application/json",
   },
