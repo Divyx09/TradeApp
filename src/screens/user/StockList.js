@@ -426,26 +426,26 @@ const StockList = () => {
             size={20}
             onPress={() => navigation.navigate("Sell", { stock: item })}
           />
-        </View>
+    </View>
       </DataTable.Cell>
     </DataTable.Row>
   );
 
   const renderCardView = ({ item }) => (
-    <Card
-      style={styles.stockCard}
-      onPress={() => navigation.navigate("StockDetails", { stock: item })}
-    >
+      <Card
+        style={styles.stockCard}
+        onPress={() => navigation.navigate("StockDetails", { stock: item })}
+      >
       <Card.Content style={styles.cardContent}>
-        <View style={styles.stockHeader}>
-          <View style={styles.stockInfo}>
+          <View style={styles.stockHeader}>
+            <View style={styles.stockInfo}>
             <Text variant='titleSmall' style={styles.symbolText}>
-              {item.symbol.replace(".NS", "")}
-            </Text>
+                {item.symbol.replace(".NS", "")}
+              </Text>
             <Text numberOfLines={1} style={styles.companyName}>
-              {item.companyName || item.symbol}
-            </Text>
-          </View>
+                {item.companyName || item.symbol}
+              </Text>
+            </View>
           <Chip 
             style={[
               styles.categoryIndicator,
@@ -464,19 +464,19 @@ const StockList = () => {
           <Text style={styles.priceText}>
             {item.category === 'Indian' ? '₹' : '$'}
             {item.price?.toLocaleString(item.category === 'Indian' ? 'en-IN' : 'en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </Text>
-          <Text
-            style={[
-              styles.changeText,
-              { color: item.change < 0 ? "#FF4444" : "#4CAF50" },
-            ]}
-          >
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+              <Text
+                style={[
+                  styles.changeText,
+                  { color: item.change < 0 ? "#FF4444" : "#4CAF50" },
+                ]}
+              >
             {item.change < 0 ? "▼" : "▲"} {Math.abs(item.changePercent).toFixed(2)}%
-          </Text>
-        </View>
+              </Text>
+            </View>
 
         <View style={styles.stockDetails}>
           <View style={styles.detailItem}>
@@ -514,7 +514,7 @@ const StockList = () => {
           />
         </View>
       </Card.Content>
-    </Card>
+      </Card>
   );
 
   return (
@@ -554,19 +554,19 @@ const StockList = () => {
           )}
         </DataTable>
       ) : (
-        <FlatList
+      <FlatList
           data={stocks}
           renderItem={renderCardView}
           keyExtractor={(item, index) => `${item.symbol}-${index}`}
           numColumns={3}
-          contentContainerStyle={[
-            styles.listContainer,
+        contentContainerStyle={[
+          styles.listContainer,
             !stocks.length && styles.emptyListContainer,
-          ]}
+        ]}
           columnWrapperStyle={styles.columnWrapper}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={loading ? (
             <ActivityIndicator style={styles.loader} />
