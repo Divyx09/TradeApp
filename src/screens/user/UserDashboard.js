@@ -29,7 +29,6 @@ const timeframes = [
   { value: "5m", label: "5M" },
   { value: "15m", label: "15M" },
   { value: "1h", label: "1H" },
-  { value: "4h", label: "4H" },
   { value: "1d", label: "1D" },
 ];
 
@@ -41,7 +40,7 @@ const popularSymbols = [
   { symbol: "TSLA", name: "Tesla Inc." },
   { symbol: "META", name: "Meta Platforms" },
   { symbol: "NVDA", name: "NVIDIA Corp." },
-  { symbol: "JPM", name: "JPMorgan Chase" }
+  { symbol: "JPM", name: "JPMorgan Chase" },
 ];
 
 const marketIndices = [
@@ -49,7 +48,7 @@ const marketIndices = [
   { symbol: "NDX", name: "Nasdaq 100" },
   { symbol: "DJI", name: "Dow Jones" },
   { symbol: "FTSE", name: "FTSE 100" },
-  { symbol: "DAX", name: "Germany DAX" }
+  { symbol: "DAX", name: "Germany DAX" },
 ];
 
 const UserDashboard = ({ navigation }) => {
@@ -99,6 +98,9 @@ const UserDashboard = ({ navigation }) => {
   const generateTradingViewWidget = () => {
     return `
       <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=0.7">
+        </head>
         <body>
           <div class="tradingview-widget-container">
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
@@ -107,17 +109,17 @@ const UserDashboard = ({ navigation }) => {
               "height": "100%",
               "autosize": true,
               "symbol": "${selectedSymbol}",
-              "interval": "D",
+              "interval": "${selectedTimeframe}",
               "timezone": "Asia/Kolkata",
               "theme": "light",
+              "style": "5",
               "locale": "en",
               "enable_publishing": false,
               "allow_symbol_change": true,
               "hide_top_toolbar": false,
-              "save_image": false,
-              "calendar": false,
-              "range": "${selectedTimeframe}",
-              "support_host": "https://www.tradingview.com"
+              "hide_legend": false,
+              "save_image": true,
+              "hide_volume": false,
             }
             </script>
           </div>
@@ -291,82 +293,9 @@ const UserDashboard = ({ navigation }) => {
         ))}
       </ScrollView>
 
-      {/* Chart Section */}
+      {/* Chart Card */}
       <Card style={styles.chartCard}>
         <Card.Content>
-          <View style={styles.chartHeader}>
-            <View style={styles.symbolContainer}>
-              <Text variant='titleLarge' style={styles.symbolText}>
-                {selectedSymbol.replace(".NS", "")}
-              </Text>
-              {stockData && (
-                <Text
-                  style={[
-                    styles.priceText,
-                    { color: stockData.change >= 0 ? "#4CAF50" : "#FF4444" },
-                  ]}
-                >
-                  ₹{stockData.price?.toFixed(2)} (
-                  {stockData.changePercent?.toFixed(2)}%)
-                </Text>
-              )}
-            </View>
-            <IconButton
-              icon='fullscreen'
-              onPress={() => setShowStockDetails(true)}
-            />
-          </View>
-
-          <View style={styles.timeframeContainer}>
-            <Text
-              variant='bodyMedium'
-              style={{ marginBottom: 8, fontSize: 20, fontWeight: "bold" }}
-            >
-              Timeframe:
-            </Text>
-            <SegmentedButtons
-              value={selectedTimeframe}
-              onValueChange={setSelectedTimeframe}
-              buttons={timeframes.map((tf) => ({
-                value: tf.value,
-                label: tf.label,
-              }))}
-              style={styles.timeframeButtons}
-            />
-          </View>
-
-          <View style={styles.chartContainer}>
-            {loading ? (
-              <ActivityIndicator style={styles.loader} />
-            ) : (
-              <WebView
-                source={{ html: generateTradingViewWidget() }}
-                style={styles.chart}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                startInLoadingState={true}
-                renderLoading={() => (
-                  <ActivityIndicator style={styles.loader} />
-                )}
-                onError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  console.warn("WebView error: ", nativeEvent);
-                }}
-                renderError={(errorDomain, errorCode, errorDesc) => (
-                  <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Error loading chart</Text>
-                    <Button
-                      mode='contained'
-                      onPress={() => setSelectedTimeframe(selectedTimeframe)}
-                    >
-                      Retry
-                    </Button>
-                  </View>
-                )}
-              />
-            )}
-          </View>
-
           {/* Symbol Selection */}
           <View style={styles.symbolSelectionContainer}>
             <Text variant='bodyMedium' style={styles.sectionTitle}>
@@ -394,7 +323,7 @@ const UserDashboard = ({ navigation }) => {
                         styles.selectedSymbolChipText,
                     ]}
                   >
-                    {stock.symbol.replace(".NS", "")}
+                    {stock.symbol}
                   </Text>
                   <Text
                     style={[
@@ -410,42 +339,158 @@ const UserDashboard = ({ navigation }) => {
             </ScrollView>
           </View>
 
-          {/* Market Indices */}
-          <View style={styles.symbolSelectionContainer}>
-            <Text variant='bodyMedium' style={styles.sectionTitle}>
-              Market Indices
-            </Text>
+          {/* Timeframe Selection */}
+          <View style={styles.timeframeContainer}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.symbolScroll}
+              style={styles.timeframeScroll}
             >
-              {marketIndices.map((index) => (
+              {timeframes.map((tf) => (
                 <TouchableOpacity
-                  key={index.symbol}
-                  onPress={() => setSelectedSymbol(index.symbol)}
+                  key={tf.value}
+                  onPress={() => setSelectedTimeframe(tf.value)}
                   style={[
-                    styles.symbolChip,
-                    selectedSymbol === index.symbol &&
-                      styles.selectedSymbolChip,
+                    styles.timeframeChip,
+                    selectedTimeframe === tf.value &&
+                      styles.selectedTimeframeChip,
                   ]}
                 >
                   <Text
                     style={[
-                      styles.symbolChipText,
-                      selectedSymbol === index.symbol &&
-                        styles.selectedSymbolChipText,
+                      styles.timeframeText,
+                      selectedTimeframe === tf.value &&
+                        styles.selectedTimeframeText,
                     ]}
                   >
-                    {index.name}
+                    {tf.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
+
+          {/* Chart */}
+          <View style={styles.chartContainer}>
+            {loading ? (
+              <ActivityIndicator
+                style={styles.loader}
+                size='large'
+                color={theme.colors.primary}
+              />
+            ) : (
+              <WebView
+                source={{ html: generateTradingViewWidget() }}
+            style={styles.chart}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <ActivityIndicator
+                    style={styles.loader}
+                    size='large'
+                    color={theme.colors.primary}
+                  />
+                )}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.warn("WebView error: ", nativeEvent);
+                }}
+              />
+            )}
+          </View>
+
+          {/* Market Overview Widget */}
+          <View style={styles.overviewContainer}>
+            <Text variant='bodyMedium' style={styles.sectionTitle}>
+              Market Overview
+            </Text>
+            <View style={styles.overviewWidget}>
+          <WebView
+            source={{
+              html: `
+                    <html>
+                      <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                          body {
+                            margin: 0;
+                            padding: 0;
+                            background-color: #ffffff;
+                          }
+                          .tradingview-widget-container {
+                            height: 100%;
+                            width: 100%;
+                          }
+                        </style>
+                      </head>
+                      <body>
+                <div class="tradingview-widget-container">
+                          <div class="tradingview-widget-container__widget"></div>
+                          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+                          {
+                            "symbols": [
+                              ["Apple", "AAPL|1D"],
+                              ["Google", "GOOGL|1D"],
+                              ["Microsoft", "MSFT|1D"]
+                            ],
+                            "chartOnly": false,
+                    "width": "100%",
+                            "height": "100%",
+                    "locale": "en",
+                            "colorTheme": "light",
+                            "autosize": true,
+                            "showVolume": false,
+                            "showMA": false,
+                            "hideDateRanges": false,
+                            "hideMarketStatus": false,
+                            "hideSymbolLogo": false,
+                            "scalePosition": "right",
+                            "scaleMode": "Normal",
+                            "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                            "fontSize": "10",
+                            "noTimeScale": false,
+                            "valuesTracking": "1",
+                            "changeMode": "price-and-percent",
+                            "chartType": "area",
+                            "maLineColor": "#2962FF",
+                            "maLineWidth": 1,
+                            "maLength": 9,
+                            "headerFontSize": "medium",
+                            "lineWidth": 2,
+                            "lineType": 0,
+                            "dateRanges": [
+                              "1d|1",
+                              "1m|30",
+                              "3m|60",
+                              "12m|1D",
+                              "60m|1W",
+                              "all|1M"
+                            ]
+                          }
+                  </script>
+                </div>
+                      </body>
+                    </html>
+                  `
+                }}
+                style={styles.overviewChart}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <ActivityIndicator
+                    style={styles.loader}
+                    size='large'
+                    color={theme.colors.primary}
+                  />
+                )}
+              />
+            </View>
+          </View>
         </Card.Content>
       </Card>
-
+      
       {/* Portfolio Summary */}
       <Card
         style={styles.portfolioCard}
@@ -503,7 +548,7 @@ const UserDashboard = ({ navigation }) => {
           </View>
         </Card.Content>
       </Card>
-
+      
       {/* Recent Transactions */}
       <Card
         style={styles.transactionsCard}
@@ -595,37 +640,82 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chartCard: {
-    marginVertical: 8,
-    elevation: 2,
+    margin: 16,
+    borderRadius: 12,
+    elevation: 4,
+    overflow: "hidden",
   },
-  chartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  symbolSelectionContainer: {
     marginBottom: 16,
   },
-  symbolContainer: {
-    flex: 1,
-  },
-  symbolText: {
-    fontWeight: "bold",
-  },
-  priceText: {
+  sectionTitle: {
     fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  symbolScroll: {
+    flexGrow: 0,
+  },
+  symbolChip: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    minWidth: 100,
+  },
+  selectedSymbolChip: {
+    backgroundColor: "#2196F3",
+    borderColor: "#2196F3",
+  },
+  symbolChipText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  selectedSymbolChipText: {
+    color: "#fff",
+  },
+  symbolCompanyName: {
+    fontSize: 12,
+    color: "#666",
     marginTop: 4,
   },
   timeframeContainer: {
-    flexDirection: "column",
-    alignItems: "center",
     marginBottom: 16,
+    alignItems: "center",
+    marginHorizontal: 0,
   },
-  timeframeButtons: {
-    flex: 1,
-    marginHorizontal: 8,
+  timeframeScroll: {
+    flexGrow: 0,
+  },
+  timeframeChip: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  selectedTimeframeChip: {
+    backgroundColor: "#2196F3",
+    borderColor: "#2196F3",
+  },
+  timeframeText: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  selectedTimeframeText: {
+    color: "#fff",
   },
   chartContainer: {
     height: 400,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -637,16 +727,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  errorText: {
-    marginBottom: 8,
-    color: "#FF4444",
   },
   portfolioCard: {
     marginBottom: 16,
@@ -743,44 +823,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
   },
-  symbolSelectionContainer: {
+  overviewContainer: {
     marginTop: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-    marginLeft: 4,
+  overviewWidget: {
+    height: 400,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    overflow: "hidden",
+    marginTop: 8,
   },
-  symbolScroll: {
-    flexGrow: 0,
-  },
-  symbolChip: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    minWidth: 100,
-  },
-  selectedSymbolChip: {
-    backgroundColor: "#2196F3",
-    borderColor: "#2196F3",
-  },
-  symbolChipText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  selectedSymbolChipText: {
-    color: "#fff",
-  },
-  symbolCompanyName: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
+  overviewChart: {
+    flex: 1,
+    backgroundColor: "transparent",
   },
 });
 
