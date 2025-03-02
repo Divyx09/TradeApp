@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, Surface } from 'react-native-paper';
 import axios from "../../config/axios";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -34,53 +35,74 @@ const ForgotPasswordScreen = ({ navigation }) => {
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title} variant="headlineMedium">
-          Reset Password
-        </Text>
+        <Surface style={styles.formCard}>
+          <MaterialCommunityIcons 
+            name="lock-reset" 
+            size={60} 
+            color="#00B4D8" 
+            style={styles.logo}
+          />
 
-        <Text style={styles.subtitle} variant="bodyMedium">
-          Enter your email address and we'll send you instructions to reset your password.
-        </Text>
-
-        {error ? (
-          <Text style={styles.error} variant="bodyMedium">
-            {error}
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>
+            Enter your email address and we'll send you instructions to reset your password.
           </Text>
-        ) : null}
 
-        {success ? (
-          <Text style={styles.success} variant="bodyMedium">
-            {success}
-          </Text>
-        ) : null}
+          {error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : null}
 
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          mode="outlined"
-        />
+          {success ? (
+            <Text style={styles.successText}>{success}</Text>
+          ) : null}
 
-        <Button
-          mode="contained"
-          onPress={handleResetPassword}
-          style={styles.button}
-          loading={loading}
-          disabled={loading}
-        >
-          Reset Password
-        </Button>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+            mode="outlined"
+            left={<TextInput.Icon icon="email" color="#808080" />}
+            outlineColor="#404040"
+            activeOutlineColor="#00B4D8"
+            textColor="#FFFFFF"
+            theme={{
+              colors: {
+                background: '#2A2A2A',
+                placeholder: '#808080',
+                text: '#FFFFFF'
+              }
+            }}
+          />
 
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('Login')}
-          style={styles.linkButton}
-        >
-          Back to Login
-        </Button>
+          <Button
+            mode="contained"
+            onPress={handleResetPassword}
+            style={styles.resetButton}
+            loading={loading}
+            disabled={loading}
+            buttonColor="#00B4D8"
+          >
+            {loading ? 'Sending...' : 'Reset Password'}
+          </Button>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('Login')}
+            style={styles.backButton}
+            textColor="#FFFFFF"
+          >
+            Back to Login
+          </Button>
+        </Surface>
       </View>
     </KeyboardAvoidingView>
   );
@@ -89,41 +111,74 @@ const ForgotPasswordScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
   },
   content: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
   },
+  formCard: {
+    backgroundColor: '#1E1E1E',
+    padding: 24,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  logo: {
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
   title: {
-    textAlign: 'center',
-    marginBottom: 10,
+    fontSize: 28,
     fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 8,
   },
   subtitle: {
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
+    color: '#808080',
+    marginBottom: 32,
+    paddingHorizontal: 20,
   },
   input: {
-    marginBottom: 15,
+    marginBottom: 20,
+    backgroundColor: '#2A2A2A',
   },
-  button: {
-    marginTop: 10,
+  resetButton: {
+    marginTop: 8,
+    paddingVertical: 6,
   },
-  linkButton: {
-    marginTop: 10,
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
   },
-  error: {
-    color: 'red',
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#404040',
+  },
+  dividerText: {
+    color: '#808080',
+    paddingHorizontal: 16,
+    fontSize: 14,
+  },
+  backButton: {
+    borderColor: '#404040',
+  },
+  errorText: {
+    color: '#FF4444',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
+    fontSize: 14,
   },
-  success: {
-    color: 'green',
+  successText: {
+    color: '#4CAF50',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
+    fontSize: 14,
   },
 });
 

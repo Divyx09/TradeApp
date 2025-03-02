@@ -1,16 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// Import screens (we'll create these next)
+// Import screens
 import Portfolio from "../screens/user/Portfolio";
 import ProfileScreen from "../screens/user/ProfileScreen";
 import StockList from "../screens/user/StockList";
 import UserDashboard from "../screens/user/UserDashboard";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BuyScreen from "../screens/user/BuyScreen";
 import SellScreen from "../screens/user/SellScreen";
 import StockDetails from "../screens/user/StockDetails";
-import RecentTrasection from "../screens/user/RecentTrasection";
 import TransactionsScreen from "../screens/user/TransactionsScreen";
 
 const Stack = createNativeStackNavigator();
@@ -20,59 +19,82 @@ const UserTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: "#2196F3",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: "#00B4D8",
+        tabBarInactiveTintColor: "#808080",
         headerShown: true,
+        tabBarStyle: {
+          backgroundColor: '#1E1E1E',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        headerStyle: {
+          backgroundColor: '#1E1E1E',
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        headerTitleStyle: {
+          color: '#FFFFFF',
+          fontSize: 20,
+          fontWeight: '600',
+        },
+        headerTintColor: '#FFFFFF',
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
       }}
     >
       <Tab.Screen
-        name='Dashboard'
+        name="Dashboard"
         component={UserDashboard}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name='view-dashboard'
+              name="view-dashboard"
               color={color}
-              size={size}
+              size={24}
             />
           ),
         }}
       />
       <Tab.Screen
-        name='Portfolio'
-        component={Portfolio }
+        name="Portfolio"
+        component={Portfolio}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name='chart-line'
+              name="chart-line"
               color={color}
-              size={size}
+              size={24}
             />
           ),
         }}
       />
       <Tab.Screen
-        name='Stocks'
+        name="Stocks"
         component={StockList}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name='trending-up'
+              name="trending-up"
               color={color}
-              size={size}
+              size={24}
             />
           ),
         }}
       />
       <Tab.Screen
-        name='Profile'
+        name="Profile"
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name='account-circle'
+              name="account-circle"
               color={color}
-              size={size}
+              size={24}
             />
           ),
         }}
@@ -83,36 +105,62 @@ const UserTabs = () => {
 
 // Stack Navigator to Include Buy and Sell Pages
 const UserStackNavigator = () => (
-  <Stack.Navigator>
+  <Stack.Navigator
+    screenOptions={{
+      headerStyle: {
+        backgroundColor: '#1E1E1E',
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+      headerTitleStyle: {
+        color: '#FFFFFF',
+        fontSize: 20,
+        fontWeight: '600',
+      },
+      headerTintColor: '#FFFFFF',
+      headerBackTitleVisible: false,
+      headerShadowVisible: false,
+      contentStyle: {
+        backgroundColor: '#121212',
+      },
+    }}
+  >
     <Stack.Screen
-      name='Tabs'
+      name="Tabs"
       component={UserTabs}
       options={{ headerShown: false }}
     />
     <Stack.Screen
-      name='Buy'
+      name="Buy"
       component={BuyScreen}
-      options={{ headerTitle: "Buy Stocks", headerBackTitle: "Back" }}
+      options={{ 
+        title: "Buy Stocks",
+        animation: 'slide_from_right',
+      }}
     />
     <Stack.Screen
-      name='Sell'
+      name="Sell"
       component={SellScreen}
-      options={{ headerTitle: "Sell Stocks", headerBackTitle: "Back" }}
+      options={{ 
+        title: "Sell Stocks",
+        animation: 'slide_from_right',
+      }}
     />
     <Stack.Screen
-      name='StockDetails'
+      name="StockDetails"
       component={StockDetails}
-      options={{ headerTitle: "Stock Details", headerBackTitle: "Back" }}
+      options={{ 
+        title: "Stock Details",
+        animation: 'slide_from_right',
+      }}
     />
     <Stack.Screen
-      name='Portfolio'
-      component={Portfolio}
-      options={{ headerTitle: "Portfolio", headerBackTitle: "Back" }}
-    />
-    <Stack.Screen
-      name='Transactions'
+      name="Transactions"
       component={TransactionsScreen}
-      options={{ headerTitle: "Transaction History", headerBackTitle: "Back" }}
+      options={{ 
+        title: "Transaction History",
+        animation: 'slide_from_right',
+      }}
     />
   </Stack.Navigator>
 );
