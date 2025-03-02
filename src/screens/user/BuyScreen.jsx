@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog } from "react-native-paper";
+import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog, Surface, Chip } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAuthToken } from "../../config/axios";
 import { API_URL } from "../../config/urls";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useWallet } from "../../context/WalletContext";
+import axios from "../../config/axios";
 
 const BuyScreen = ({ navigation, route }) => {
   const { stock } = route.params;
@@ -54,26 +55,11 @@ const BuyScreen = ({ navigation, route }) => {
       // First try to remove money from wallet
       await removeMoney(totalPrice);
 
-      const response = await fetch(`${API_URL}/portfolio/buy`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          symbol: stock.symbol,
-          quantity: parseInt(quantity),
-          companyName: stock.companyName || stock.symbol,
-        }),
+      const response = await axios.post("/portfolio/buy", {
+        symbol: stock.symbol,
+        quantity: parseInt(quantity),
+        price: stock.price,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // If the API call fails, we should add the money back to the wallet
-        await addMoney(totalPrice);
-        throw new Error(data.message || "Failed to buy stock");
-      }
 
       // Save transaction to local storage
       const newTransaction = {
@@ -97,9 +83,13 @@ const BuyScreen = ({ navigation, route }) => {
       // Refresh wallet balance
       await refreshBalance();
 
-      navigation.goBack();
+      navigation.replace("Portfolio");
     } catch (error) {
-      setError(error.message);
+      console.error("Error buying stock:", error);
+      setError(
+        error.response?.data?.message ||
+          "Failed to buy stock. Please try again later.",
+      );
     } finally {
       setIsLoading(false);
       setShowConfirmDialog(false);
@@ -112,107 +102,103 @@ const BuyScreen = ({ navigation, route }) => {
     }
   };
 
+  const totalAmount = quantity ? stock.price * parseInt(quantity) : 0;
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.stockInfoCard}>
-          <Card.Content>
-            <View style={styles.stockHeader}>
-              <View>
-                <Text variant="titleLarge" style={styles.symbolText}>
-                  {stock.symbol.replace('.NS', '')}
-                </Text>
-                <Text variant="bodyMedium" style={styles.companyName}>
-                  {stock.companyName || stock.symbol}
-                </Text>
-              </View>
-              <View style={styles.priceContainer}>
-                <Text variant="titleMedium" style={styles.currentPrice}>
-                  ₹{stock.price.toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
-                </Text>
-                <Text
-                  style={[
-                    styles.priceChange,
-                    { color: stock.change < 0 ? '#FF4444' : '#4CAF50' }
-                  ]}
-                >
-                  {stock.change < 0 ? '▼' : '▲'} {Math.abs(stock.changePercent).toFixed(2)}%
-                </Text>
-              </View>
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.symbol}>{stock.symbol}</Text>
+              <Text style={styles.companyName}>{stock.companyName}</Text>
             </View>
-          </Card.Content>
-        </Card>
+            <Chip
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor:
+                    stock.category === "Indian" ? "#E3F2FD20" : "#FFF3E020",
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: stock.category === "Indian" ? "#90CAF9" : "#FFB74D",
+                }}
+              >
+                {stock.category}
+              </Text>
+            </Chip>
+          </View>
 
-        <Card style={styles.buyCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Available Balance
-            </Text>
-            <Text variant="headlineMedium" style={styles.balanceText}>
-              {walletLoading ? (
-                <ActivityIndicator size="small" color={paperTheme.colors.primary} />
-              ) : (
-                `₹${balance.toLocaleString('en-IN', {
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Current Price</Text>
+            <Text style={styles.price}>
+              {stock.category === "Indian" ? "₹" : "$"}
+              {stock.price?.toLocaleString(
+                stock.category === "Indian" ? "en-IN" : "en-US",
+                {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}`
+                  maximumFractionDigits: 2,
+                },
               )}
             </Text>
+          </View>
 
-            <TextInput
-              label="Quantity"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-              error={!!error}
-              right={<TextInput.Icon icon="calculator" />}
-              disabled={isLoading}
-            />
-            <HelperText type="error" visible={!!error}>
-              {error}
-            </HelperText>
+          <View style={styles.balanceInfo}>
+            <Text style={styles.balanceLabel}>Available Balance</Text>
+            <Text style={styles.balanceAmount}>₹{balance.toFixed(2)}</Text>
+          </View>
 
-            {quantity !== "" && (
-              <View style={styles.summaryContainer}>
-                <View style={styles.summaryRow}>
-                  <Text>Price per share</Text>
-                  <Text>₹{stock.price.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text>Total Amount</Text>
-                  <Text style={styles.totalText}>₹{totalPrice.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text>Remaining Balance</Text>
-                  <Text style={{ 
-                    color: remainingBalance < 0 ? '#FF4444' : '#4CAF50',
-                    fontWeight: 'bold'
-                  }}>
-                    ₹{remainingBalance.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            )}
+          <TextInput
+            label="Quantity"
+            value={quantity}
+            onChangeText={(text) => {
+              setQuantity(text.replace(/[^0-9]/g, ""));
+              setError(null);
+            }}
+            keyboardType="numeric"
+            mode="outlined"
+            style={styles.input}
+            error={!!error}
+            outlineColor="#404040"
+            activeOutlineColor="#00B4D8"
+            textColor="#FFFFFF"
+            theme={{
+              colors: {
+                background: '#2A2A2A',
+                placeholder: '#808080',
+                text: '#FFFFFF'
+              }
+            }}
+          />
 
-            <Button
-              mode="contained"
-              onPress={handleBuy}
-              style={styles.buyButton}
-              disabled={isLoading || !quantity || !!error}
-              loading={isLoading}
-            >
-              {isLoading ? 'Processing...' : 'Buy Now'}
-            </Button>
-          </Card.Content>
-        </Card>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <Surface style={styles.totalContainer} elevation={1}>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalAmount}>
+              ₹{totalAmount.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+          </Surface>
+
+          <Button
+            mode="contained"
+            onPress={handleBuy}
+            style={styles.buyButton}
+            disabled={isLoading || !quantity || !!error}
+            loading={isLoading}
+          >
+            {isLoading ? "Processing..." : "Buy Now"}
+          </Button>
+        </Surface>
       </ScrollView>
 
       <Portal>
@@ -247,71 +233,93 @@ const BuyScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#121212",
   },
   scrollContent: {
+    flexGrow: 1,
     padding: 16,
   },
-  stockInfoCard: {
-    marginBottom: 16,
-    elevation: 2,
+  card: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
+    padding: 16,
   },
-  stockHeader: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 24,
   },
-  symbolText: {
+  symbol: {
+    fontSize: 24,
     fontWeight: "bold",
+    color: "#FFFFFF",
   },
   companyName: {
-    color: "#666",
+    fontSize: 14,
+    color: "#B0B0B0",
     marginTop: 4,
+  },
+  categoryChip: {
+    borderRadius: 16,
   },
   priceContainer: {
-    alignItems: "flex-end",
+    marginBottom: 24,
   },
-  currentPrice: {
-    fontWeight: "bold",
-  },
-  priceChange: {
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  buyCard: {
-    elevation: 2,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-    color: "#666",
-  },
-  balanceText: {
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#2196F3",
-  },
-  input: {
+  priceLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
     marginBottom: 4,
   },
-  summaryContainer: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  totalText: {
+  price: {
+    fontSize: 28,
     fontWeight: "bold",
-    fontSize: 16,
+    color: "#FFFFFF",
+  },
+  balanceInfo: {
+    backgroundColor: "#2A2A2A",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
+    marginBottom: 4,
+  },
+  balanceAmount: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#4CAF50",
+  },
+  input: {
+    marginBottom: 24,
+    backgroundColor: "#2A2A2A",
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  totalContainer: {
+    backgroundColor: "#2A2A2A",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  totalLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
+    marginBottom: 4,
+  },
+  totalAmount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   buyButton: {
-    marginTop: 16,
-    paddingVertical: 8,
     backgroundColor: "#4CAF50",
+    paddingVertical: 8,
   },
 });
 

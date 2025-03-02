@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog } from "react-native-paper";
+import { Text, TextInput, Button, Card, HelperText, ActivityIndicator, Portal, Dialog, Surface, Chip } from "react-native-paper";
 import { getAuthToken } from "../../config/axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../config/urls";
@@ -165,94 +165,97 @@ const SellScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.stockInfoCard}>
-          <Card.Content>
-            <View style={styles.stockHeader}>
-              <View>
-                <Text variant="titleLarge" style={styles.symbolText}>
-                  {stock.symbol.replace('.NS', '')}
-                </Text>
-                <Text variant="bodyMedium" style={styles.companyName}>
-                  {stock.companyName || stock.symbol}
-                </Text>
-              </View>
-              <View style={styles.priceContainer}>
-                <Text variant="titleMedium" style={styles.currentPrice}>
-                  ₹{stock.price.toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
-                </Text>
-                <Text
-                  style={[
-                    styles.priceChange,
-                    { color: stock.change < 0 ? '#FF4444' : '#4CAF50' }
-                  ]}
-                >
-                  {stock.change < 0 ? '▼' : '▲'} {Math.abs(stock.changePercent).toFixed(2)}%
-                </Text>
-              </View>
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.symbol}>{stock.symbol}</Text>
+              <Text style={styles.companyName}>{stock.companyName}</Text>
             </View>
-          </Card.Content>
-        </Card>
-
-        <Card style={styles.sellCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Your Holdings
-            </Text>
-            <Text variant="headlineMedium" style={styles.holdingsText}>
-              {ownedStocks} shares
-            </Text>
-
-            <TextInput
-              label="Quantity to Sell"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-              error={!!error}
-              right={<TextInput.Icon icon="calculator" />}
-              disabled={isLoading || ownedStocks === 0}
-            />
-            <HelperText type="error" visible={!!error}>
-              {error}
-            </HelperText>
-
-            {quantity !== "" && (
-              <View style={styles.summaryContainer}>
-                <View style={styles.summaryRow}>
-                  <Text>Price per share</Text>
-                  <Text>₹{stock.price.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text>Total Amount</Text>
-                  <Text style={styles.totalText}>₹{totalPrice.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text>Remaining Shares</Text>
-                  <Text style={{ 
-                    color: (ownedStocks - parseInt(quantity || 0)) < 0 ? '#FF4444' : '#4CAF50',
-                    fontWeight: 'bold'
-                  }}>
-                    {(ownedStocks - parseInt(quantity || 0))}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            <Button
-              mode="contained"
-              onPress={handleSell}
-              style={styles.sellButton}
-              disabled={isLoading || !quantity || !!error || ownedStocks === 0}
-              loading={isLoading}
+            <Chip
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor:
+                    stock.category === "Indian" ? "#E3F2FD20" : "#FFF3E020",
+                },
+              ]}
             >
-              {isLoading ? 'Processing...' : 'Sell Now'}
-            </Button>
-          </Card.Content>
-        </Card>
+              <Text
+                style={{
+                  color: stock.category === "Indian" ? "#90CAF9" : "#FFB74D",
+                }}
+              >
+                {stock.category}
+              </Text>
+            </Chip>
+          </View>
+
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Current Price</Text>
+            <Text style={styles.price}>
+              {stock.category === "Indian" ? "₹" : "$"}
+              {stock.price?.toLocaleString(
+                stock.category === "Indian" ? "en-IN" : "en-US",
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                },
+              )}
+            </Text>
+          </View>
+
+          <View style={styles.holdingInfo}>
+            <Text style={styles.holdingLabel}>Your Holdings</Text>
+            <Text style={styles.holdingAmount}>
+              {stock.quantity || 0} shares
+            </Text>
+          </View>
+
+          <TextInput
+            label="Quantity to Sell"
+            value={quantity}
+            onChangeText={(text) => {
+              setQuantity(text.replace(/[^0-9]/g, ""));
+              setError(null);
+            }}
+            keyboardType="numeric"
+            mode="outlined"
+            style={styles.input}
+            error={!!error}
+            outlineColor="#404040"
+            activeOutlineColor="#00B4D8"
+            textColor="#FFFFFF"
+            theme={{
+              colors: {
+                background: '#2A2A2A',
+                placeholder: '#808080',
+                text: '#FFFFFF'
+              }
+            }}
+          />
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <Surface style={styles.totalContainer} elevation={1}>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalAmount}>
+              ₹{totalPrice.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+          </Surface>
+
+          <Button
+            mode="contained"
+            onPress={handleSell}
+            style={styles.sellButton}
+            disabled={isLoading || !quantity}
+            loading={isLoading}
+          >
+            {isLoading ? "Processing..." : "Sell Now"}
+          </Button>
+        </Surface>
       </ScrollView>
 
       <Portal>
@@ -287,7 +290,7 @@ const SellScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#121212",
   },
   loadingContainer: {
     flex: 1,
@@ -300,68 +303,90 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   scrollContent: {
+    flexGrow: 1,
     padding: 16,
   },
-  stockInfoCard: {
-    marginBottom: 16,
-    elevation: 2,
+  card: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
+    padding: 16,
   },
-  stockHeader: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 24,
   },
-  symbolText: {
+  symbol: {
+    fontSize: 24,
     fontWeight: "bold",
+    color: "#FFFFFF",
   },
   companyName: {
-    color: "#666",
+    fontSize: 14,
+    color: "#B0B0B0",
     marginTop: 4,
+  },
+  categoryChip: {
+    borderRadius: 16,
   },
   priceContainer: {
-    alignItems: "flex-end",
+    marginBottom: 24,
   },
-  currentPrice: {
-    fontWeight: "bold",
-  },
-  priceChange: {
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  sellCard: {
-    elevation: 2,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-    color: "#666",
-  },
-  holdingsText: {
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#2196F3",
-  },
-  input: {
+  priceLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
     marginBottom: 4,
   },
-  summaryContainer: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  totalText: {
+  price: {
+    fontSize: 28,
     fontWeight: "bold",
-    fontSize: 16,
+    color: "#FFFFFF",
+  },
+  holdingInfo: {
+    backgroundColor: "#2A2A2A",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  holdingLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
+    marginBottom: 4,
+  },
+  holdingAmount: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  input: {
+    marginBottom: 24,
+    backgroundColor: "#2A2A2A",
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  totalContainer: {
+    backgroundColor: "#2A2A2A",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  totalLabel: {
+    fontSize: 14,
+    color: "#B0B0B0",
+    marginBottom: 4,
+  },
+  totalAmount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   sellButton: {
-    marginTop: 16,
-    paddingVertical: 8,
     backgroundColor: "#FF4444",
+    paddingVertical: 8,
   },
 });
 

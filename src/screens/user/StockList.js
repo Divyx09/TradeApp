@@ -193,91 +193,96 @@ const StockList = () => {
       <Modal
         visible={showFiltersModal}
         onDismiss={() => setShowFiltersModal(false)}
-        contentContainerStyle={styles.modalContent}
+        contentContainerStyle={styles.filtersModal}
       >
-        <Text variant="titleLarge" style={styles.modalTitle}>Filters</Text>
-        
-        <Text variant="titleMedium" style={styles.filterSectionTitle}>Market</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-          <Chip
-            selected={!selectedMarket}
-            onPress={() => setSelectedMarket(null)}
-            style={styles.filterChip}
-          >
-            All Markets
-          </Chip>
-          {markets?.map(market => (
-            <Chip
-              key={market.id}
-              selected={selectedMarket === market.id}
-              onPress={() => setSelectedMarket(market.id)}
-              style={styles.filterChip}
-            >
-              {market.name}
-            </Chip>
-          ))}
-        </ScrollView>
+        <Text style={styles.modalTitle}>Filter Stocks</Text>
 
-        <Text variant="titleMedium" style={styles.filterSectionTitle}>Sector</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-          <Chip
-            selected={!selectedSector}
-            onPress={() => setSelectedSector(null)}
-            style={styles.filterChip}
-          >
-            All Sectors
-          </Chip>
-          {selectedMarket && markets?.find(m => m.id === selectedMarket)?.sectors.map(sector => (
-            <Chip
-              key={sector.id}
-              selected={selectedSector === sector.id}
-              onPress={() => setSelectedSector(sector.id)}
-              style={styles.filterChip}
-            >
-              {sector.name} ({sector.stockCount})
-            </Chip>
-          ))}
-        </ScrollView>
+        {/* Market Filter */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterTitle}>Market</Text>
+          <View style={styles.chipGroup}>
+            {markets?.map((market) => (
+              <Chip
+                key={market.id}
+                selected={selectedMarket === market.id}
+                onPress={() => setSelectedMarket(market.id)}
+                style={[
+                  styles.filterChip,
+                  selectedMarket === market.id && styles.selectedChip
+                ]}
+              >
+                {market.name}
+              </Chip>
+            ))}
+          </View>
+        </View>
 
-        <Text variant="titleMedium" style={styles.filterSectionTitle}>Market Cap</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-          <Chip
-            selected={!marketCapFilter}
-            onPress={() => setMarketCapFilter(null)}
-            style={styles.filterChip}
-          >
-            All
-          </Chip>
-          <Chip
-            selected={marketCapFilter === 'LARGE_CAP'}
-            onPress={() => setMarketCapFilter('LARGE_CAP')}
-            style={styles.filterChip}
-          >
-            Large Cap
-          </Chip>
-          <Chip
-            selected={marketCapFilter === 'MID_CAP'}
-            onPress={() => setMarketCapFilter('MID_CAP')}
-            style={styles.filterChip}
-          >
-            Mid Cap
-          </Chip>
-          <Chip
-            selected={marketCapFilter === 'SMALL_CAP'}
-            onPress={() => setMarketCapFilter('SMALL_CAP')}
-            style={styles.filterChip}
-          >
-            Small Cap
-          </Chip>
-        </ScrollView>
+        {/* Sector Filter */}
+        {selectedMarket && (
+          <View style={styles.filterSection}>
+            <Text style={styles.filterTitle}>Sector</Text>
+            <View style={styles.chipGroup}>
+              {markets
+                ?.find((m) => m.id === selectedMarket)
+                ?.sectors.map((sector) => (
+                  <Chip
+                    key={sector.id}
+                    selected={selectedSector === sector.id}
+                    onPress={() => setSelectedSector(sector.id)}
+                    style={[
+                      styles.filterChip,
+                      selectedSector === sector.id && styles.selectedChip
+                    ]}
+                  >
+                    {sector.name}
+                  </Chip>
+                ))}
+            </View>
+          </View>
+        )}
 
-        <Button
-          mode="contained"
-          onPress={() => setShowFiltersModal(false)}
-          style={styles.applyButton}
-        >
-          Apply Filters
-        </Button>
+        {/* Market Cap Filter */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterTitle}>Market Cap</Text>
+          <View style={styles.chipGroup}>
+            {["LARGE_CAP", "MID_CAP", "SMALL_CAP"].map((cap) => (
+              <Chip
+                key={cap}
+                selected={marketCapFilter === cap}
+                onPress={() => setMarketCapFilter(cap)}
+                style={[
+                  styles.filterChip,
+                  marketCapFilter === cap && styles.selectedChip
+                ]}
+              >
+                {cap.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ")}
+              </Chip>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.modalActions}>
+          <Button
+            mode="outlined"
+            onPress={() => {
+              setSelectedMarket(null);
+              setSelectedSector(null);
+              setMarketCapFilter(null);
+              setPriceRangeFilter(null);
+              setShowFiltersModal(false);
+            }}
+            textColor="#FFFFFF"
+          >
+            Clear All
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => setShowFiltersModal(false)}
+            buttonColor="#00B4D8"
+          >
+            Apply
+          </Button>
+        </View>
       </Modal>
     </Portal>
   );
@@ -402,7 +407,7 @@ const StockList = () => {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-        </Text>
+      </Text>
       </DataTable.Cell>
       <DataTable.Cell numeric>
         <Text
@@ -439,20 +444,20 @@ const StockList = () => {
       <Card.Content style={styles.cardContent}>
           <View style={styles.stockHeader}>
             <View style={styles.stockInfo}>
-            <Text variant='titleSmall' style={styles.symbolText}>
+            <Text style={styles.symbolText} numberOfLines={1}>
                 {item.symbol.replace(".NS", "")}
               </Text>
-            <Text numberOfLines={1} style={styles.companyName}>
+            <Text style={styles.companyName} numberOfLines={1}>
                 {item.companyName || item.symbol}
               </Text>
             </View>
           <Chip 
             style={[
               styles.categoryIndicator,
-              { backgroundColor: item.category === 'Indian' ? '#E3F2FD' : '#FFF3E0' }
+              { backgroundColor: item.category === 'Indian' ? '#E3F2FD20' : '#FFF3E020' }
             ]}
             textStyle={{ 
-              color: item.category === 'Indian' ? '#1976D2' : '#F57C00',
+              color: item.category === 'Indian' ? '#90CAF9' : '#FFB74D',
               fontSize: 10
             }}
           >
@@ -461,7 +466,7 @@ const StockList = () => {
         </View>
 
         <View style={styles.priceSection}>
-          <Text style={styles.priceText}>
+          <Text style={styles.priceText} numberOfLines={1}>
             {item.category === 'Indian' ? '₹' : '$'}
             {item.price?.toLocaleString(item.category === 'Indian' ? 'en-IN' : 'en-US', {
                   minimumFractionDigits: 2,
@@ -471,49 +476,15 @@ const StockList = () => {
               <Text
                 style={[
                   styles.changeText,
-                  { color: item.change < 0 ? "#FF4444" : "#4CAF50" },
+              { color: item.changePercent >= 0 ? '#4CAF50' : '#FF4444' }
                 ]}
+            numberOfLines={1}
               >
-            {item.change < 0 ? "▼" : "▲"} {Math.abs(item.changePercent).toFixed(2)}%
+            {item.changePercent >= 0 ? '+' : ''}
+            {item.changePercent?.toFixed(2)}%
               </Text>
-            </View>
-
-        <View style={styles.stockDetails}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Open</Text>
-            <Text style={styles.detailValue}>{item.open?.toFixed(2)}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>High</Text>
-            <Text style={styles.detailValue}>{item.dayHigh?.toFixed(2)}</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Low</Text>
-            <Text style={styles.detailValue}>{item.dayLow?.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardActions}>
-          <IconButton
-            icon="cart"
-            mode="contained"
-            size={20}
-            onPress={() => navigation.navigate("Buy", { stock: item })}
-            containerColor="#4CAF50"
-            iconColor="white"
-            style={styles.actionIcon}
-          />
-          <IconButton
-            icon="sale"
-            mode="contained"
-            size={20}
-            onPress={() => navigation.navigate("Sell", { stock: item })}
-            containerColor="#FF4444"
-            iconColor="white"
-            style={styles.actionIcon}
-          />
-        </View>
-      </Card.Content>
+        </Card.Content>
       </Card>
   );
 
@@ -558,7 +529,7 @@ const StockList = () => {
           data={stocks}
           renderItem={renderCardView}
           keyExtractor={(item, index) => `${item.symbol}-${index}`}
-          numColumns={3}
+          numColumns={2}
         contentContainerStyle={[
           styles.listContainer,
             !stocks.length && styles.emptyListContainer,
@@ -599,152 +570,167 @@ const StockList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#121212",
   },
   header: {
+    backgroundColor: "#1E1E1E",
     padding: 16,
-    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
   },
   searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   searchBar: {
     flex: 1,
     marginRight: 8,
-    elevation: 0,
+    backgroundColor: "#2A2A2A",
+    borderRadius: 8,
   },
   activeFilters: {
-    marginTop: 8,
+    marginTop: 12,
   },
   activeFilterChip: {
     marginRight: 8,
+    backgroundColor: "#2A2A2A",
   },
-  modalContent: {
-    backgroundColor: 'white',
-    margin: 20,
-    padding: 20,
-    borderRadius: 10,
+  tableHeader: {
+    backgroundColor: "#1E1E1E",
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
   },
-  modalTitle: {
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  filterSectionTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  filterChips: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  filterChip: {
-    marginRight: 8,
-  },
-  applyButton: {
-    marginTop: 16,
-  },
-  listContainer: {
-    padding: 8,
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-  },
-  stockCard: {
-    flex: 1,
-    margin: 4,
-    maxWidth: '32%',
-    borderRadius: 8,
-    elevation: 2,
-  },
-  cardContent: {
-    padding: 8,
-  },
-  stockHeader: {
-    flexDirection: "column",
-    marginBottom: 8,
-  },
-  stockInfo: {
-    marginBottom: 4,
+  headerText: {
+    color: "#B0B0B0",
+    fontWeight: "bold",
   },
   symbolText: {
+    color: "#FFFFFF",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 16,
+  },
+  sectorText: {
+    color: "#B0B0B0",
+    fontSize: 12,
   },
   companyName: {
-    color: "#666",
+    color: "#B0B0B0",
     fontSize: 12,
     marginTop: 2,
   },
-  categoryIndicator: {
-    alignSelf: 'flex-start',
-    height: 22,
-  },
-  priceSection: {
-    marginVertical: 8,
-    alignItems: 'center',
-  },
   priceText: {
-    fontWeight: "bold",
-    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "500",
   },
   changeText: {
     fontWeight: "bold",
-    fontSize: 12,
-  },
-  stockDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  detailItem: {
-    alignItems: 'center',
-  },
-  detailLabel: {
-    color: '#666',
-    fontSize: 10,
-  },
-  detailValue: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  actionIcon: {
-    margin: 0,
-  },
-  tableHeader: {
-    backgroundColor: '#f8f8f8',
   },
   tableActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  stockCard: {
+    flex: 0.5,
+    margin: 6,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+  },
+  cardContent: {
+    padding: 12,
+  },
+  stockHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  stockInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  categoryIndicator: {
+    height: 24,
+    paddingHorizontal: 8,
+  },
+  priceSection: {
+    marginTop: 8,
+  },
+  priceText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  changeText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  listContainer: {
+    padding: 6,
+  },
+  columnWrapper: {
+    justifyContent: "space-between",
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  emptyStateText: {
+    color: "#B0B0B0",
+    fontSize: 16,
+    marginTop: 16,
+    textAlign: "center",
   },
   loader: {
-    marginTop: 20,
+    padding: 20,
   },
   footerLoader: {
     padding: 16,
-  },
-  emptyState: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
   },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#666",
+  filtersModal: {
+    backgroundColor: "#1E1E1E",
+    margin: 16,
+    borderRadius: 12,
+    padding: 16,
+  },
+  modalTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterTitle: {
+    color: "#B0B0B0",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  chipGroup: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    backgroundColor: "#2A2A2A",
+    marginBottom: 8,
+  },
+  selectedChip: {
+    backgroundColor: "#00B4D8",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
     marginTop: 16,
-    textAlign: "center",
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: "center",
   },
 });
 

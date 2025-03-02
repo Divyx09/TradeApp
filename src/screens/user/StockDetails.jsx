@@ -1,164 +1,292 @@
 import {
   View,
-  Button,
-  Border,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
 } from "react-native";
+import { Text, Surface, Chip, Button } from "react-native-paper";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import CandleChart from "./CandleChart";
 
 const StockDetails = ({ navigation, route }) => {
-  // Dummy Stock Data
   const { stock } = route.params;
+  const [timeFrame, setTimeFrame] = useState("1mo");
 
-  const [timeFrame,setTimeFrame] = useState('')
-
-  const handleTimeRange = (e) => {
-    setTimeFrame(e)
-    console.log(timeFrame);
-  }
+  const timeFrames = [
+    { label: "5Y", value: "5y" },
+    { label: "1Y", value: "1y" },
+    { label: "6M", value: "6mo" },
+    { label: "1M", value: "1mo" },
+    { label: "5D", value: "5d" },
+    { label: "1D", value: "1d" },
+  ];
 
   return (
     <ScrollView style={styles.container}>
-      {/* Stock Name & Symbol */}
-      <Text style={styles.title}>{stock.symbol}</Text>
-      <Text style={styles.symbol}>
-        {stock.symbol} | {stock.exchange}
-      </Text>
+      <Surface style={styles.headerCard} elevation={2}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.symbol}>{stock.symbol.replace(".NS", "")}</Text>
+            <Text style={styles.companyName}>{stock.companyName}</Text>
+          </View>
+          <Chip
+            style={[
+              styles.categoryChip,
+              {
+                backgroundColor:
+                  stock.category === "Indian" ? "#E3F2FD20" : "#FFF3E020",
+              },
+            ]}
+          >
+            <Text
+              style={{
+                color: stock.category === "Indian" ? "#90CAF9" : "#FFB74D",
+              }}
+            >
+              {stock.category}
+            </Text>
+          </Chip>
+        </View>
 
-      {/* Current Price */}
-      <View style={styles.priceContainer}>
-        <Text style={styles.price}>₹{stock.price}</Text>
-        <Text
-          style={[
-            styles.change,
-            stock.change > 0 ? styles.positive : styles.negative,
-          ]}
-        >
-          {stock.change.toFixed(3)}
-        </Text>
-      </View>
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>
+            {stock.category === "Indian" ? "₹" : "$"}
+            {stock.price?.toLocaleString(
+              stock.category === "Indian" ? "en-IN" : "en-US",
+              {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
+            )}
+          </Text>
+          <Text
+            style={[
+              styles.change,
+              { color: stock.changePercent >= 0 ? "#4CAF50" : "#FF4444" },
+            ]}
+          >
+            {stock.changePercent >= 0 ? "+" : ""}
+            {stock.changePercent?.toFixed(2)}%
+          </Text>
+        </View>
+      </Surface>
 
-      {/* Market Data */}
-      <View style={styles.statsContainer}>
-        <Text>📈 Change: ₹{stock.change}</Text>
-        <Text>📊 Change Percent: {stock.changePercent}%</Text>
-        <Text>📊 Volume: {stock.volume}</Text>
-        <Text>💰 Market Cap: ₹{stock.marketCap}</Text>
-        <Text>⏳ Timestamp: {stock.timestamp}</Text>
-      </View>
+      <Surface style={styles.statsCard} elevation={2}>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Open</Text>
+            <Text style={styles.statValue}>₹{stock.open?.toFixed(2)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>High</Text>
+            <Text style={styles.statValue}>₹{stock.dayHigh?.toFixed(2)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Low</Text>
+            <Text style={styles.statValue}>₹{stock.dayLow?.toFixed(2)}</Text>
+          </View>
+        </View>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Volume</Text>
+            <Text style={styles.statValue}>
+              {stock.volume?.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Market Cap</Text>
+            <Text style={styles.statValue}>
+              ₹{(stock.marketCap / 1e9).toFixed(2)}B
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>P/E Ratio</Text>
+            <Text style={styles.statValue}>{stock.pe?.toFixed(2) || "-"}</Text>
+          </View>
+        </View>
+      </Surface>
 
-      {/* Button for fetching data according to time-lapse */}
-      <View style={styles.btnContainer}>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5y")}><Text>5yr</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1y")}><Text>1yr</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("6mo")}><Text>6mo</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1mo")}><Text>1mo</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("5d")}><Text>5d</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>handleTimeRange("1d")}><Text>1d</Text></TouchableOpacity>
-        
-      </View>
-      {/* Dummy Stock Chart (Replace with real graph later) */}
-      <View style={styles.chartPlaceholder}>
-        {/* <Text style={{ color: "#888" }}>📉 Stock Chart Coming Soon...</Text> */}
-        <CandleChart symbol={stock.symbol} timeFrame={timeFrame} />
-      </View>
+      <Surface style={styles.chartCard} elevation={2}>
+        <View style={styles.timeFrameContainer}>
+          {timeFrames.map((tf) => (
+            <TouchableOpacity
+              key={tf.value}
+              style={[
+                styles.timeFrameButton,
+                timeFrame === tf.value && styles.timeFrameButtonActive,
+              ]}
+              onPress={() => setTimeFrame(tf.value)}
+            >
+              <Text
+                style={[
+                  styles.timeFrameText,
+                  timeFrame === tf.value && styles.timeFrameTextActive,
+                ]}
+              >
+                {tf.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartSymbol}>
+            {stock.symbol} • {timeFrame.toUpperCase()}
+          </Text>
+          <CandleChart symbol={stock.symbol} timeFrame={timeFrame} />
+        </View>
+      </Surface>
 
-      {/* Buy & Sell Buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.buyButton}
+      <View style={styles.actionButtons}>
+        <Button
+          mode='contained'
           onPress={() => navigation.navigate("Buy", { stock })}
+          style={[styles.actionButton, styles.buyButton]}
+          icon='cart'
         >
-          <MaterialCommunityIcons name="cart" size={20} color="white" />
-          <Text style={styles.buttonText}>Buy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.sellButton}
+          Buy
+        </Button>
+        <Button
+          mode='contained'
           onPress={() => navigation.navigate("Sell", { stock })}
+          style={[styles.actionButton, styles.sellButton]}
+          icon='cash'
         >
-          <MaterialCommunityIcons name="cash" size={20} color="white" />
-          <Text style={styles.buttonText}>Sell</Text>
-        </TouchableOpacity>
+          Sell
+        </Button>
       </View>
     </ScrollView>
   );
 };
 
-export default StockDetails;
-
 const styles = StyleSheet.create({
-  btnContainer:{
-    display:'flex',
-    flexDirection:'row',
-    justifyContent:'center',
-    alignContent:'center',
-    gap:5,
-    marginVertical:3
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
   },
-  button:{
-    color:'white',
-    padding:10,
-    // width:60,
-    backgroundColor:'cyan',
-    borderRadius:5,
-    borderWidth:1,
-    borderColor:'black'
+  headerCard: {
+    backgroundColor: "#1E1E1E",
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
   },
-  container: { padding: 20, backgroundColor: "#fff", flex: 1 },
-  title: { fontSize: 22, fontWeight: "bold" },
-  symbol: { fontSize: 16, color: "#666" },
-  priceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  price: { fontSize: 28, fontWeight: "bold" },
-  change: { fontSize: 16, marginLeft: 10 },
-  positive: { color: "green" },
-  negative: { color: "red" },
-  statsContainer: {
-    backgroundColor: "#f5f5f5",
-    padding: 10,
-    paddingVertical: 20,
-    borderRadius: 8,
-    marginVertical: 10,
-    gap: 10,
-    fontWeight:500
-  },
-  chartPlaceholder: {
-    height: 300,
-    backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", marginTop: 10 },
-  newsItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#ddd" },
-  newsTitle: { fontSize: 16, fontWeight: "bold" },
-  newsSource: { fontSize: 14, color: "#666" },
-  buttonContainer: {
+  headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    alignItems: "flex-start",
+  },
+  symbol: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  companyName: {
+    fontSize: 14,
+    color: "#B0B0B0",
+    marginTop: 4,
+  },
+  categoryChip: {
+    borderRadius: 16,
+  },
+  priceContainer: {
+    marginTop: 16,
+  },
+  price: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  change: {
+    fontSize: 18,
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  statsCard: {
+    backgroundColor: "#1E1E1E",
+    margin: 16,
+    marginTop: 0,
+    padding: 16,
+    borderRadius: 12,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statLabel: {
+    color: "#B0B0B0",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  chartCard: {
+    backgroundColor: "#1E1E1E",
+    margin: 16,
+    marginTop: 0,
+    padding: 16,
+    borderRadius: 12,
+  },
+  timeFrameContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  timeFrameButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#2A2A2A",
+  },
+  timeFrameButtonActive: {
+    backgroundColor: "#00B4D8",
+  },
+  timeFrameText: {
+    color: "#B0B0B0",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  timeFrameTextActive: {
+    color: "#FFFFFF",
+  },
+  chartContainer: {
+    borderRadius: 8,
+    width: "100%",
+    height: 420,
+    // backgroundColor: "#2A2A2A",
+    padding: 16,
+  },
+  chartSymbol: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 8,
+    opacity: 0.9,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    margin: 16,
+    marginTop: 0,
+  },
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 6,
   },
   buyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "green",
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: "#4CAF50",
   },
   sellButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "red",
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: "#FF4444",
   },
-  buttonText: { color: "white", fontWeight: "bold", marginLeft: 5 },
 });
+
+export default StockDetails;
