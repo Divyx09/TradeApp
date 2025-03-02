@@ -11,6 +11,7 @@ import BuyScreen from "../screens/user/BuyScreen";
 import SellScreen from "../screens/user/SellScreen";
 import StockDetails from "../screens/user/StockDetails";
 import TransactionsScreen from "../screens/user/TransactionsScreen";
+import ForexScreen from "../screens/user/ForexScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -80,6 +81,19 @@ const UserTabs = () => {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="trending-up"
+              color={color}
+              size={24}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Forex"
+        component={ForexScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="currency-usd"
               color={color}
               size={24}
             />
