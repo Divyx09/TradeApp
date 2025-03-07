@@ -1,21 +1,29 @@
 import React from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Card, DataTable, ActivityIndicator, Surface, Button } from "react-native-paper";
+import { Text, Card, DataTable, ActivityIndicator, Surface, Button, SegmentedButtons } from "react-native-paper";
 import { getAuthToken } from "../../config/axios";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_URL } from "../../config/urls";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Portfolio = () => {
   const [data, setData] = useState({ holdings: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('stocks');
 
   const fetchPortfolio = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Get holdings from AsyncStorage
+      const storedPortfolio = await AsyncStorage.getItem("portfolio");
+      const portfolio = storedPortfolio ? JSON.parse(storedPortfolio) : [];
+      
+      // Get stock holdings from API
       const token = await getAuthToken();
       const response = await fetch(`${API_URL}/portfolio/holdings`, {
         method: "GET",
@@ -29,8 +37,15 @@ const Portfolio = () => {
         throw new Error("Failed to fetch portfolio");
       }
 
-      const result = await response.json();
-      setData(result);
+      const apiResult = await response.json();
+      
+      // Combine API stock holdings with local forex/crypto holdings
+      const allHoldings = [
+        ...apiResult.holdings.map(h => ({ ...h, category: 'STOCKS' })),
+        ...portfolio.filter(h => h.category === 'FOREX' || h.category === 'CRYPTO')
+      ];
+
+      setData({ holdings: allHoldings });
     } catch (error) {
       console.error("Network Error:", error.message);
       setError(error.message);
@@ -39,26 +54,20 @@ const Portfolio = () => {
     }
   }, []);
 
-  // Calculate stock PnL using useMemo
-  const stockPnl = useMemo(() => {
-    const pnl = {};
-    for (const holding of data.holdings) {
-      pnl[holding.symbol] = (
-        holding.currentPrice * holding.quantity -
-        holding.averageBuyPrice * holding.quantity
-      ).toFixed(2);
-    }
-    return pnl;
-  }, [data.holdings]);
-
-  // Calculate total values using useMemo
+  // Calculate total values using useMemo for the active category
   const { totalValue, totalInvestment, totalPnL, totalPnLPercentage } = useMemo(() => {
-    const totalValue = data.holdings.reduce(
-      (sum, stock) => sum + stock.currentPrice * stock.quantity,
+    const filteredHoldings = data.holdings.filter(h => 
+      activeTab === 'stocks' ? h.category === 'STOCKS' : 
+      activeTab === 'forex' ? h.category === 'FOREX' : 
+      h.category === 'CRYPTO'
+    );
+
+    const totalValue = filteredHoldings.reduce(
+      (sum, holding) => sum + (holding.currentPrice || holding.price) * (holding.quantity || holding.amount),
       0
     );
-    const totalInvestment = data.holdings.reduce(
-      (sum, stock) => sum + stock.averageBuyPrice * stock.quantity,
+    const totalInvestment = filteredHoldings.reduce(
+      (sum, holding) => sum + (holding.averageBuyPrice || holding.price) * (holding.quantity || holding.amount),
       0
     );
     const totalPnL = totalValue - totalInvestment;
@@ -70,7 +79,7 @@ const Portfolio = () => {
       totalPnL,
       totalPnLPercentage
     };
-  }, [data.holdings]);
+  }, [data.holdings, activeTab]);
 
   // Fetch data when screen comes into focus
   useFocusEffect(
@@ -105,8 +114,28 @@ const Portfolio = () => {
     );
   }
 
+  const filteredHoldings = data.holdings.filter(h => 
+    activeTab === 'stocks' ? h.category === 'STOCKS' : 
+    activeTab === 'forex' ? h.category === 'FOREX' : 
+    h.category === 'CRYPTO'
+  );
+
   return (
     <ScrollView style={styles.container}>
+      {/* Portfolio Type Selector */}
+      <Surface style={styles.header} elevation={2}>
+        <SegmentedButtons
+          value={activeTab}
+          onValueChange={setActiveTab}
+          buttons={[
+            { value: 'stocks', label: 'Stocks' },
+            { value: 'forex', label: 'Forex' },
+            { value: 'crypto', label: 'Crypto' },
+          ]}
+          style={styles.segmentedButtons}
+        />
+      </Surface>
+
       {/* Portfolio Summary Cards */}
       <View style={styles.summaryContainer}>
         <Surface style={styles.summaryCard}>
@@ -142,47 +171,58 @@ const Portfolio = () => {
       <Card style={styles.holdingsCard}>
         <Card.Content>
           <Text variant="titleLarge" style={styles.holdingsTitle}>
-            Your Holdings
+            Your {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Holdings
           </Text>
-          {data.holdings.length === 0 ? (
+          {filteredHoldings.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="folder-open-outline" size={48} color="#666" />
               <Text style={styles.emptyStateText}>No holdings found</Text>
-              <Text style={styles.emptyStateSubtext}>Start trading to build your portfolio</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Start trading to build your {activeTab} portfolio
+              </Text>
             </View>
           ) : (
             <DataTable style={styles.table}>
               <DataTable.Header style={styles.tableHeader}>
-                <DataTable.Title textStyle={styles.headerText}>Stock</DataTable.Title>
-                <DataTable.Title numeric textStyle={styles.headerText}>Qty</DataTable.Title>
+                <DataTable.Title textStyle={styles.headerText}>
+                  {activeTab === 'stocks' ? 'Stock' : activeTab === 'forex' ? 'Pair' : 'Crypto'}
+                </DataTable.Title>
+                {activeTab === 'stocks' ? (
+                  <DataTable.Title numeric textStyle={styles.headerText}>Qty</DataTable.Title>
+                ) : (
+                  <DataTable.Title numeric textStyle={styles.headerText}>Amount</DataTable.Title>
+                )}
                 <DataTable.Title numeric textStyle={styles.headerText}>Avg</DataTable.Title>
                 <DataTable.Title numeric textStyle={styles.headerText}>LTP</DataTable.Title>
                 <DataTable.Title numeric textStyle={styles.headerText}>P&L</DataTable.Title>
               </DataTable.Header>
 
-              {data.holdings.map((holding) => {
-                const pnl = Number(stockPnl[holding.symbol]);
-                const pnlPercentage = ((holding.currentPrice - holding.averageBuyPrice) / holding.averageBuyPrice) * 100;
+              {filteredHoldings.map((holding) => {
+                const currentPrice = holding.currentPrice || holding.price;
+                const quantity = holding.quantity || holding.amount;
+                const avgPrice = holding.averageBuyPrice || holding.price;
+                const pnl = (currentPrice - avgPrice) * quantity;
+                const pnlPercentage = ((currentPrice - avgPrice) / avgPrice) * 100;
                 
                 return (
                   <DataTable.Row key={holding.symbol} style={styles.tableRow}>
                     <DataTable.Cell textStyle={styles.symbolCell}>
                       <Text style={styles.symbolText}>{holding.symbol}</Text>
-                      <Text style={styles.companyName}>{holding.companyName}</Text>
+                      <Text style={styles.companyName}>{holding.name || holding.companyName}</Text>
                     </DataTable.Cell>
                     <DataTable.Cell numeric textStyle={styles.cellText}>
-                      {holding.quantity}
+                      {quantity}
                     </DataTable.Cell>
                     <DataTable.Cell numeric textStyle={styles.cellText}>
-                      {holding.averageBuyPrice.toFixed(2)}
+                      {avgPrice.toFixed(activeTab === 'stocks' ? 2 : 4)}
                     </DataTable.Cell>
                     <DataTable.Cell numeric textStyle={styles.cellText}>
-                      {holding.currentPrice.toFixed(2)}
+                      {currentPrice.toFixed(activeTab === 'stocks' ? 2 : 4)}
                     </DataTable.Cell>
                     <DataTable.Cell numeric>
                       <View style={styles.pnlContainer}>
                         <Text style={[styles.pnlText, { color: pnl >= 0 ? "#4CAF50" : "#FF4444" }]}>
-                          {pnl >= 0 ? "+" : ""}{pnl}
+                          {pnl >= 0 ? "+" : ""}{pnl.toFixed(2)}
                         </Text>
                         <Text style={[styles.pnlPercentageText, { color: pnl >= 0 ? "#4CAF50" : "#FF4444" }]}>
                           ({pnlPercentage >= 0 ? "+" : ""}{pnlPercentage.toFixed(2)}%)
@@ -325,6 +365,15 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     marginTop: 8,
     color: "#999",
+  },
+  header: {
+    backgroundColor: "#1E1E1E",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
+  },
+  segmentedButtons: {
+    backgroundColor: "#1E1E1E",
   },
 });
 

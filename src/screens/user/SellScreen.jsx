@@ -49,6 +49,7 @@ const SellScreen = ({ navigation, route }) => {
       const data = await response.json();
       setHoldingData(data);
 
+      // Find the holding for this stock
       const holding = data.holdings.find(item => item.symbol === stock.symbol);
       if (holding) {
         setOwnedStocks(holding.quantity);
@@ -57,6 +58,7 @@ const SellScreen = ({ navigation, route }) => {
         setError("You don't own any shares of this stock");
       }
     } catch (error) {
+      console.error("Error fetching holdings:", error);
       setError(error.message);
       setOwnedStocks(0);
     } finally {
@@ -207,7 +209,7 @@ const SellScreen = ({ navigation, route }) => {
           <View style={styles.holdingInfo}>
             <Text style={styles.holdingLabel}>Your Holdings</Text>
             <Text style={styles.holdingAmount}>
-              {stock.quantity || 0} shares
+              {ownedStocks} shares
             </Text>
           </View>
 

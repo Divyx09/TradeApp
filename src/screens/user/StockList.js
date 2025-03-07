@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, ScrollView } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, ScrollView, TouchableOpacity } from "react-native";
 import {
   Text,
   Card,
@@ -74,6 +74,18 @@ const NIFTY50_SYMBOLS = [
   "WIPRO.NS",
 ];
 
+const MAJOR_INDICES = [
+  { symbol: "^NSEI", name: "NIFTY 50", category: "Indian" },
+  { symbol: "^BSESN", name: "SENSEX", category: "Indian" },
+  { symbol: "^NSEBANK", name: "NIFTY BANK", category: "Indian" },
+  { symbol: "^CNX100", name: "NIFTY 100", category: "Indian" },
+  { symbol: "^CRSLDX", name: "NIFTY 500", category: "Indian" },
+  { symbol: "^GSPC", name: "S&P 500", category: "US" },
+  { symbol: "^NDX", name: "NASDAQ 100", category: "US" },
+  { symbol: "^DJI", name: "Dow Jones", category: "US" },
+  { symbol: "^RUT", name: "Russell 2000", category: "US" }
+];
+
 const StockList = () => {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,6 +105,7 @@ const StockList = () => {
   const [marketCapFilter, setMarketCapFilter] = useState(null);
   const [priceRangeFilter, setPriceRangeFilter] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [indices, setIndices] = useState([]);
 
   console.log(API_URL);
   const yahooFinanceAPI = useMemo(
@@ -187,6 +200,40 @@ const StockList = () => {
       fetchStockData(nextPage);
     }
   }, [loadingMore, hasMore, loading, page, fetchStockData]);
+
+  const fetchIndices = useCallback(async () => {
+    try {
+      const symbols = MAJOR_INDICES.map(index => index.symbol).join(',');
+      const response = await fetch(`${API_URL}/stocks/quotes?symbols=${symbols}`);
+      if (!response.ok) throw new Error('Failed to fetch indices');
+      
+      const data = await response.json();
+      const indicesData = Array.isArray(data) ? data : [data];
+      
+      const formattedIndices = indicesData.map(quote => {
+        const indexInfo = MAJOR_INDICES.find(i => i.symbol === quote.symbol);
+        return {
+          ...quote,
+          companyName: indexInfo.name,
+          category: indexInfo.category,
+          regularMarketPrice: quote.regularMarketPrice || quote.price,
+          regularMarketChangePercent: quote.regularMarketChangePercent || quote.changePercent,
+          regularMarketChange: quote.regularMarketChange || quote.change
+        };
+      });
+      
+      setIndices(formattedIndices);
+    } catch (error) {
+      console.error('Error fetching indices:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchIndices();
+    // Refresh indices every 30 seconds
+    const interval = setInterval(fetchIndices, 30000);
+    return () => clearInterval(interval);
+  }, [fetchIndices]);
 
   const renderFiltersModal = () => (
     <Portal>
@@ -314,6 +361,63 @@ const StockList = () => {
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
+        style={styles.indicesContainer}
+      >
+        {indices.length > 0 ? (
+          indices.map((index) => (
+            <TouchableOpacity
+              key={index.symbol}
+              onPress={() => navigation.navigate("StockDetails", { 
+                stock: {
+                  ...index,
+                  symbol: index.symbol,
+                  companyName: index.companyName,
+                  price: index.regularMarketPrice,
+                  change: index.regularMarketChange,
+                  changePercent: index.regularMarketChangePercent,
+                  category: index.category,
+                  open: index.regularMarketOpen,
+                  dayHigh: index.regularMarketDayHigh,
+                  dayLow: index.regularMarketDayLow,
+                  volume: index.regularMarketVolume,
+                  marketCap: index.marketCap,
+                  pe: index.priceToEarnings
+                }
+              })}
+            >
+              <Surface style={styles.indexCard} elevation={1}>
+                <Text style={styles.indexName}>{index.companyName}</Text>
+                <Text style={styles.indexPrice}>
+                  {index.category === "Indian" ? "₹" : "$"}
+                  {index.regularMarketPrice?.toLocaleString(
+                    index.category === "Indian" ? "en-IN" : "en-US",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
+                </Text>
+                <Text style={[
+                  styles.indexChange,
+                  { color: index.regularMarketChangePercent >= 0 ? "#4CAF50" : "#FF4444" }
+                ]}>
+                  {index.regularMarketChangePercent >= 0 ? "+" : ""}
+                  {index.regularMarketChangePercent?.toFixed(2)}%
+                </Text>
+              </Surface>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.indicesLoadingContainer}>
+            <ActivityIndicator size="small" color="#00B4D8" />
+            <Text style={styles.indicesLoadingText}>Loading indices...</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
         style={styles.activeFilters}
       >
         {selectedMarket && (
@@ -393,7 +497,17 @@ const StockList = () => {
   );
 
   const renderTableRow = ({ item, index }) => (
-    <DataTable.Row onPress={() => navigation.navigate("StockDetails", { stock: item })}>
+    <DataTable.Row onPress={() => navigation.navigate("StockDetails", { 
+      stock: {
+        ...item,
+        open: item.regularMarketOpen || item.open,
+        dayHigh: item.regularMarketDayHigh || item.dayHigh,
+        dayLow: item.regularMarketDayLow || item.dayLow,
+        volume: item.regularMarketVolume || item.volume,
+        marketCap: item.marketCap,
+        pe: item.priceToEarnings || item.pe
+      }
+    })}>
       <DataTable.Cell>
         <View>
           <Text style={styles.symbolText}>{item.symbol.replace(".NS", "")}</Text>
@@ -439,7 +553,17 @@ const StockList = () => {
   const renderCardView = ({ item }) => (
       <Card
         style={styles.stockCard}
-        onPress={() => navigation.navigate("StockDetails", { stock: item })}
+        onPress={() => navigation.navigate("StockDetails", { 
+          stock: {
+            ...item,
+            open: item.regularMarketOpen || item.open,
+            dayHigh: item.regularMarketDayHigh || item.dayHigh,
+            dayLow: item.regularMarketDayLow || item.dayLow,
+            volume: item.regularMarketVolume || item.volume,
+            marketCap: item.marketCap,
+            pe: item.priceToEarnings || item.pe
+          }
+        })}
       >
       <Card.Content style={styles.cardContent}>
           <View style={styles.stockHeader}>
@@ -731,6 +855,50 @@ const styles = StyleSheet.create({
   emptyListContainer: {
     flex: 1,
     justifyContent: "center",
+  },
+  indicesContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  indexCard: {
+    backgroundColor: "#2A2A2A",
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    minWidth: 120,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  indexName: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  indexPrice: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 2,
+  },
+  indexChange: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  indicesLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: "#2A2A2A",
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  indicesLoadingText: {
+    color: "#B0B0B0",
+    marginLeft: 8,
+    fontSize: 12,
   },
 });
 

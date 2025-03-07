@@ -73,40 +73,96 @@ const StockDetails = ({ navigation, route }) => {
         </View>
       </Surface>
 
-      <Surface style={styles.statsCard} elevation={2}>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Open</Text>
-            <Text style={styles.statValue}>₹{stock.open?.toFixed(2)}</Text>
+      {!stock.symbol.startsWith('^') ? (
+        <Surface style={styles.statsCard} elevation={2}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Open</Text>
+              <Text style={styles.statValue}>
+                {stock.category === "Indian" ? "₹" : "$"}
+                {stock.open?.toLocaleString(
+                  stock.category === "Indian" ? "en-IN" : "en-US",
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                ) || "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>High</Text>
+              <Text style={styles.statValue}>
+                {stock.category === "Indian" ? "₹" : "$"}
+                {stock.dayHigh?.toLocaleString(
+                  stock.category === "Indian" ? "en-IN" : "en-US",
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                ) || "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Low</Text>
+              <Text style={styles.statValue}>
+                {stock.category === "Indian" ? "₹" : "$"}
+                {stock.dayLow?.toLocaleString(
+                  stock.category === "Indian" ? "en-IN" : "en-US",
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                ) || "-"}
+              </Text>
+            </View>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>High</Text>
-            <Text style={styles.statValue}>₹{stock.dayHigh?.toFixed(2)}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Volume</Text>
+              <Text style={styles.statValue}>
+                {stock.volume?.toLocaleString() || "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Market Cap</Text>
+              <Text style={styles.statValue}>
+                {stock.category === "Indian" ? "₹" : "$"}
+                {stock.marketCap ? (
+                  stock.marketCap >= 1e9 
+                    ? `${(stock.marketCap / 1e9).toFixed(2)}B`
+                    : stock.marketCap >= 1e6
+                    ? `${(stock.marketCap / 1e6).toFixed(2)}M`
+                    : stock.marketCap.toLocaleString()
+                ) : "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>P/E Ratio</Text>
+              <Text style={styles.statValue}>
+                {stock.pe?.toFixed(2) || "-"}
+              </Text>
+            </View>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Low</Text>
-            <Text style={styles.statValue}>₹{stock.dayLow?.toFixed(2)}</Text>
+        </Surface>
+      ) : (
+        <Surface style={styles.statsCard} elevation={2}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Change</Text>
+              <Text style={[styles.statValue, { color: stock.change >= 0 ? "#4CAF50" : "#FF4444" }]}>
+                {stock.category === "Indian" ? "₹" : "$"}
+                {stock.change?.toLocaleString(
+                  stock.category === "Indian" ? "en-IN" : "en-US",
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                ) || "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Volume</Text>
+              <Text style={styles.statValue}>
+                {stock.volume?.toLocaleString() || "-"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Last Updated</Text>
+              <Text style={styles.statValue}>
+                {new Date(stock.timestamp).toLocaleTimeString()}
+              </Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>
-              {stock.volume?.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Market Cap</Text>
-            <Text style={styles.statValue}>
-              ₹{(stock.marketCap / 1e9).toFixed(2)}B
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>P/E Ratio</Text>
-            <Text style={styles.statValue}>{stock.pe?.toFixed(2) || "-"}</Text>
-          </View>
-        </View>
-      </Surface>
+        </Surface>
+      )}
 
       <Surface style={styles.chartCard} elevation={2}>
         <View style={styles.timeFrameContainer}>

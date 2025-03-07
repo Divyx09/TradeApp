@@ -52,14 +52,19 @@ const BuyScreen = ({ navigation, route }) => {
         throw new Error("Authentication required");
       }
 
-      // First try to remove money from wallet
-      await removeMoney(totalPrice);
-
+      // Make the buy request first
       const response = await axios.post("/portfolio/buy", {
         symbol: stock.symbol,
         quantity: parseInt(quantity),
-        price: stock.price,
+        companyName: stock.companyName
       });
+
+      if (!response.data) {
+        throw new Error("Failed to buy stock");
+      }
+
+      // Only remove money from wallet after successful trade
+      await removeMoney(totalPrice);
 
       // Save transaction to local storage
       const newTransaction = {
@@ -83,7 +88,8 @@ const BuyScreen = ({ navigation, route }) => {
       // Refresh wallet balance
       await refreshBalance();
 
-      navigation.replace("Portfolio");
+      // Navigate back to the previous screen
+      navigation.goBack();
     } catch (error) {
       console.error("Error buying stock:", error);
       setError(
