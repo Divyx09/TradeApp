@@ -5,10 +5,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Dimensions,
 } from "react-native";
-import { TextInput, Button, Text, HelperText } from "react-native-paper";
+import { TextInput, Button, Text, HelperText, Surface } from "react-native-paper";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Operations from "./Operation";
 import { setAuthToken } from "../../config/axios";
+
+const { width } = Dimensions.get('window');
 
 const SignupScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +24,10 @@ const SignupScreen = ({ navigation }) => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [secureTextEntry, setSecureTextEntry] = useState({
+    password: true,
+    confirmPassword: true,
+  });
 
   const validateForm = () => {
     const newErrors = {};
@@ -67,102 +75,144 @@ const SignupScreen = ({ navigation }) => {
     }
   };
 
+  const toggleSecureEntry = (field) => {
+    setSecureTextEntry({
+      ...secureTextEntry,
+      [field]: !secureTextEntry[field],
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title} variant='headlineMedium'>
-          Create Account
-        </Text>
+        <Surface style={styles.formContainer} elevation={2}>
+          <View style={styles.headerContainer}>
+            <MaterialCommunityIcons name="account-plus" size={48} color="#00B4D8" />
+            <Text style={styles.title} variant="headlineMedium">
+              Create Account
+            </Text>
+            <Text style={styles.subtitle}>
+              Join us to start trading stocks and more
+            </Text>
+          </View>
 
-        {errors.submit && (
-          <Text style={styles.error} variant='bodyMedium'>
-            {errors.submit}
-          </Text>
-        )}
+          {errors.submit && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle" size={20} color="#FF4444" />
+              <Text style={styles.errorText}>{errors.submit}</Text>
+            </View>
+          )}
 
-        <TextInput
-          label='Full Name'
-          value={formData.name}
-          onChangeText={(text) => setFormData({ ...formData, name: text })}
-          style={styles.input}
-          mode='outlined'
-          error={!!errors.name}
-        />
-        <HelperText type='error' visible={!!errors.name}>
-          {errors.name}
-        </HelperText>
+          <TextInput
+            label="Full Name"
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+            style={styles.input}
+            mode="outlined"
+            error={!!errors.name}
+            left={<TextInput.Icon icon="account" color="#666" />}
+            theme={{ colors: { primary: '#00B4D8' } }}
+          />
+          <HelperText type="error" visible={!!errors.name}>
+            {errors.name}
+          </HelperText>
 
-        <TextInput
-          label='Email'
-          value={formData.email}
-          onChangeText={(text) => setFormData({ ...formData, email: text })}
-          keyboardType='email-address'
-          autoCapitalize='none'
-          style={styles.input}
-          mode='outlined'
-          error={!!errors.email}
-        />
-        <HelperText type='error' visible={!!errors.email}>
-          {errors.email}
-        </HelperText>
+          <TextInput
+            label="Email"
+            value={formData.email}
+            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.input}
+            mode="outlined"
+            error={!!errors.email}
+            left={<TextInput.Icon icon="email" color="#666" />}
+            theme={{ colors: { primary: '#00B4D8' } }}
+          />
+          <HelperText type="error" visible={!!errors.email}>
+            {errors.email}
+          </HelperText>
 
-        <TextInput
-          label='Password'
-          value={formData.password}
-          onChangeText={(text) => setFormData({ ...formData, password: text })}
-          secureTextEntry
-          style={styles.input}
-          mode='outlined'
-          error={!!errors.password}
-        />
-        <HelperText type='error' visible={!!errors.password}>
-          {errors.password}
-        </HelperText>
+          <TextInput
+            label="Password"
+            value={formData.password}
+            onChangeText={(text) => setFormData({ ...formData, password: text })}
+            secureTextEntry={secureTextEntry.password}
+            style={styles.input}
+            mode="outlined"
+            error={!!errors.password}
+            left={<TextInput.Icon icon="lock" color="#666" />}
+            right={
+              <TextInput.Icon
+                icon={secureTextEntry.password ? "eye" : "eye-off"}
+                onPress={() => toggleSecureEntry('password')}
+                color="#666"
+              />
+            }
+            theme={{ colors: { primary: '#00B4D8' } }}
+          />
+          <HelperText type="error" visible={!!errors.password}>
+            {errors.password}
+          </HelperText>
 
-        <TextInput
-          label='Confirm Password'
-          value={formData.confirmPassword}
-          onChangeText={(text) =>
-            setFormData({ ...formData, confirmPassword: text })
-          }
-          secureTextEntry
-          style={styles.input}
-          mode='outlined'
-          error={!!errors.confirmPassword}
-        />
-        <HelperText type='error' visible={!!errors.confirmPassword}>
-          {errors.confirmPassword}
-        </HelperText>
+          <TextInput
+            label="Confirm Password"
+            value={formData.confirmPassword}
+            onChangeText={(text) =>
+              setFormData({ ...formData, confirmPassword: text })
+            }
+            secureTextEntry={secureTextEntry.confirmPassword}
+            style={styles.input}
+            mode="outlined"
+            error={!!errors.confirmPassword}
+            left={<TextInput.Icon icon="lock-check" color="#666" />}
+            right={
+              <TextInput.Icon
+                icon={secureTextEntry.confirmPassword ? "eye" : "eye-off"}
+                onPress={() => toggleSecureEntry('confirmPassword')}
+                color="#666"
+              />
+            }
+            theme={{ colors: { primary: '#00B4D8' } }}
+          />
+          <HelperText type="error" visible={!!errors.confirmPassword}>
+            {errors.confirmPassword}
+          </HelperText>
 
-        <TextInput
-          label='Phone Number'
-          value={formData.phone}
-          onChangeText={(text) => setFormData({ ...formData, phone: text })}
-          keyboardType='phone-pad'
-          style={styles.input}
-          mode='outlined'
-        />
+          <TextInput
+            label="Phone Number"
+            value={formData.phone}
+            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            keyboardType="phone-pad"
+            style={styles.input}
+            mode="outlined"
+            left={<TextInput.Icon icon="phone" color="#666" />}
+            theme={{ colors: { primary: '#00B4D8' } }}
+          />
 
-        <Button
-          mode='contained'
-          onPress={handleSignup}
-          style={styles.button}
-          loading={loading}
-          disabled={loading}
-        >
-          Sign Up
-        </Button>
+          <Button
+            mode="contained"
+            onPress={handleSignup}
+            style={styles.button}
+            loading={loading}
+            disabled={loading}
+            buttonColor="#00B4D8"
+          >
+            Create Account
+          </Button>
 
-        <Button
-          mode='text'
-          onPress={() => navigation.navigate("Login")}
-          style={styles.linkButton}
-        >
-          Already have an account? Login
-        </Button>
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate("Login")}
+            style={styles.linkButton}
+            textColor="#00B4D8"
+          >
+            Already have an account? Login
+          </Button>
+        </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -171,31 +221,63 @@ const SignupScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#121212",
   },
   scrollContent: {
-    padding: 20,
     flexGrow: 1,
     justifyContent: "center",
+    padding: 20,
+  },
+  formContainer: {
+    backgroundColor: "#1E1E1E",
+    padding: 24,
+    borderRadius: 16,
+    width: Math.min(400, width - 40),
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+  },
+  headerContainer: {
+    alignItems: "center",
+    marginBottom: 32,
   },
   title: {
-    textAlign: "center",
-    marginBottom: 30,
+    color: "#FFFFFF",
+    fontSize: 28,
     fontWeight: "bold",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  subtitle: {
+    color: "#B0B0B0",
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: "center",
   },
   input: {
-    marginBottom: 5,
+    marginBottom: 4,
+    backgroundColor: "#2A2A2A",
   },
   button: {
-    marginTop: 20,
+    marginTop: 24,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   linkButton: {
-    marginTop: 10,
+    marginTop: 16,
   },
-  error: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: 15,
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF444420",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#FF4444",
+    marginLeft: 8,
+    flex: 1,
   },
 });
 
